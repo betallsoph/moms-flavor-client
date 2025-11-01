@@ -3,12 +3,12 @@ import { getAuth } from 'firebase/auth';
 
 // Firebase configuration từ environment variables
 const firebaseConfig = {
-  apiKey: "AIzaSyDu5SPqLihdsx12gDDxUANB6X3QD-hDvKU",
-  authDomain: "moms-flavor.firebaseapp.com",
-  projectId: "moms-flavor",
-  storageBucket: "moms-flavor.firebasestorage.app",
-  messagingSenderId: "179261131575",
-  appId: "1:179261131575:web:75e57b3b2e976537f6a8b2"
+  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
+  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
+  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
+  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
+  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
 };
 
 // Initialize Firebase (chỉ initialize 1 lần)
