@@ -1,0 +1,227 @@
+'use client';
+
+import { useEffect, useState } from 'react';
+import { useRouter, useParams } from 'next/navigation';
+import { PageContainer, PageHeader, LoadingSpinner, GradientButton } from '@/components/ui';
+
+interface Recipe {
+  id: string;
+  dishName?: string;
+  recipeName?: string;
+  ingredientsList?: Array<{ name: string; quantity: string; unit: string }>;
+  favoriteBrands?: string[];
+  specialNotes?: string;
+  createdAt: string;
+}
+
+export default function IngredientsPage() {
+  const router = useRouter();
+  const params = useParams();
+  const recipeId = params.id as string;
+  const [recipe, setRecipe] = useState<Recipe | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [checkedItems, setCheckedItems] = useState<Record<number, boolean>>({});
+  const [allChecked, setAllChecked] = useState(false);
+  const [showConfirmation, setShowConfirmation] = useState(false);
+
+  useEffect(() => {
+    // Load recipe from localStorage
+    const recipes = JSON.parse(localStorage.getItem('recipes') || '[]');
+    const found = recipes.find((r: Recipe) => r.id === recipeId);
+    if (found) {
+      setRecipe(found);
+      // Initialize all items as unchecked
+      if (found.ingredientsList) {
+        const initialState: Record<number, boolean> = {};
+        found.ingredientsList.forEach((_: any, idx: number) => {
+          initialState[idx] = false;
+        });
+        setCheckedItems(initialState);
+      }
+    }
+    setLoading(false);
+  }, [recipeId]);
+
+  const handleCheck = (index: number) => {
+    const updated = { ...checkedItems, [index]: !checkedItems[index] };
+    setCheckedItems(updated);
+    
+    // Check if all are checked
+    if (recipe?.ingredientsList) {
+      const allCheckedNow = recipe.ingredientsList.every((_, idx) => updated[idx]);
+      setAllChecked(allCheckedNow);
+    }
+  };
+
+  if (loading) {
+    return <LoadingSpinner />;
+  }
+
+  if (!recipe) {
+    return (
+      <PageContainer>
+        <div className="flex min-h-screen items-center justify-center">
+          <div className="text-center">
+            <p className="text-2xl font-bold text-gray-900 mb-4">Không tìm thấy công thức</p>
+            <GradientButton onClick={() => router.push('/recipes')}>
+              Quay lại
+            </GradientButton>
+          </div>
+        </div>
+      </PageContainer>
+    );
+  }
+
+  return (
+    <PageContainer>
+      <PageHeader
+        icon="🛒"
+        title="Chuẩn bị nguyên liệu"
+        backButton={{
+          label: 'Quay lại',
+          onClick: () => router.push(`/recipes/${recipeId}`),
+        }}
+      />
+
+      <main className="max-w-4xl mx-auto px-6 py-12">
+        <div className="bg-white rounded-2xl shadow-lg border border-orange-100 p-8">
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">
+            {recipe.dishName || recipe.recipeName || 'Công thức'}
+          </h2>
+          <p className="text-gray-600 mb-8">
+            ✓ Kiểm tra từng nguyên liệu khi chuẩn bị xong
+          </p>
+
+          {recipe.ingredientsList && recipe.ingredientsList.length > 0 ? (
+            <div className="space-y-3 mb-8">
+              {recipe.ingredientsList.map((ingredient, idx) => (
+                <div 
+                  key={idx}
+                  className="flex items-center gap-4 p-4 border-2 border-gray-200 rounded-lg hover:border-orange-300 transition-colors"
+                >
+                  <input
+                    type="checkbox"
+                    id={`ingredient-${idx}`}
+                    checked={checkedItems[idx] || false}
+                    onChange={() => handleCheck(idx)}
+                    className="w-6 h-6 text-orange-600 rounded border-gray-300 focus:ring-orange-500 cursor-pointer"
+                  />
+                  <label htmlFor={`ingredient-${idx}`} className="flex-1 cursor-pointer">
+                    <p className="font-semibold text-gray-900">{ingredient.name}</p>
+                    <p className="text-sm text-gray-600">
+                      {ingredient.quantity} {ingredient.unit}
+                    </p>
+                  </label>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="bg-gray-50 rounded-lg p-6 text-center text-gray-600 mb-8">
+              <p>Chưa có nguyên liệu. Vui lòng thêm nguyên liệu trước.</p>
+            </div>
+          )}
+
+          {/* Special Notes */}
+          {recipe.specialNotes && (
+            <div className="bg-yellow-50 border-l-4 border-yellow-400 p-6 rounded mb-8">
+              <p className="font-semibold text-gray-900 mb-2">✨ Lưu ý đặc biệt:</p>
+              <p className="text-gray-700">{recipe.specialNotes}</p>
+            </div>
+          )}
+
+          {/* Favorite Brands */}
+          {recipe.favoriteBrands && recipe.favoriteBrands.length > 0 && (
+            <div className="bg-blue-50 border-l-4 border-blue-400 p-6 rounded mb-8">
+              <p className="font-semibold text-gray-900 mb-3">🏷️ Hãng/thực phẩm quen thuộc:</p>
+              <div className="flex flex-wrap gap-2">
+                {recipe.favoriteBrands.map((brand, idx) => (
+                  <span key={idx} className="inline-block px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm">
+                    {brand}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Progress */}
+          <div className="mb-8 bg-gradient-to-r from-orange-50 to-amber-50 p-6 rounded-lg">
+            <div className="flex items-center justify-between mb-2">
+              <p className="font-semibold text-gray-900">Tiến độ chuẩn bị</p>
+              <p className="text-2xl font-bold text-orange-600">
+                {recipe.ingredientsList ? Object.values(checkedItems).filter(Boolean).length : 0}/{recipe.ingredientsList?.length || 0}
+              </p>
+            </div>
+            <div className="w-full bg-gray-300 rounded-full h-3">
+              <div
+                className="bg-gradient-to-r from-orange-500 to-amber-500 h-3 rounded-full transition-all duration-300"
+                style={{
+                  width: recipe.ingredientsList 
+                    ? `${(Object.values(checkedItems).filter(Boolean).length / recipe.ingredientsList.length) * 100}%`
+                    : '0%'
+                }}
+              ></div>
+            </div>
+          </div>
+
+          {/* Buttons */}
+          <div className="flex gap-4">
+            <button
+              onClick={() => router.push(`/recipes/${recipeId}`)}
+              className="flex-1 bg-gray-200 text-gray-900 font-semibold py-3 px-6 rounded-lg hover:bg-gray-300 transition-colors"
+            >
+              Quay lại
+            </button>
+            <button
+              onClick={() => setShowConfirmation(true)}
+              disabled={!allChecked}
+              className="flex-1 bg-gradient-to-r from-orange-600 to-amber-600 text-white font-semibold py-3 px-6 rounded-lg hover:shadow-lg transition-shadow disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              Tiếp tục →
+            </button>
+          </div>
+
+          {/* Confirmation Modal */}
+          {showConfirmation && (
+            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+              <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full p-8">
+                <h3 className="text-2xl font-bold text-gray-900 mb-6">Xác nhận chuẩn bị xong nguyên liệu</h3>
+
+                <div className="space-y-4 mb-8">
+                  <div className="bg-blue-50 border-l-4 border-blue-400 p-4 rounded">
+                    <p className="font-semibold text-blue-900 mb-1">💡 Mẹo:</p>
+                    <p className="text-gray-700">Chuẩn bị tất cả nguyên liệu trước khi bắt đầu nấu (mise en place) giúp quá trình nấu suôn sẻ hơn.</p>
+                  </div>
+
+                  <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded">
+                    <p className="font-semibold text-yellow-900 mb-1">⚠️ Cảnh báo:</p>
+                    <p className="text-gray-700">Nên cắt và chuẩn bị các nguyên liệu có yêu cầu đặc biệt trước (tỏi, hành, v.v.).</p>
+                  </div>
+
+                  <div className="bg-green-50 border-l-4 border-green-400 p-4 rounded">
+                    <p className="font-semibold text-green-900 mb-1">✅ Sẵn sàng:</p>
+                    <p className="text-gray-700">Hãy đảm bảo tất cả dụng cụ nấu nướng đã chuẩn bị sẵn.</p>
+                  </div>
+                </div>
+
+                <div className="flex gap-4">
+                  <button
+                    onClick={() => setShowConfirmation(false)}
+                    className="flex-1 bg-gray-200 text-gray-900 font-semibold py-3 px-6 rounded-lg hover:bg-gray-300 transition-colors"
+                  >
+                    Quay lại
+                  </button>
+                  <button
+                    onClick={() => router.push(`/cook/${recipeId}/overview`)}
+                    className="flex-1 bg-gradient-to-r from-orange-600 to-amber-600 text-white font-semibold py-3 px-6 rounded-lg hover:shadow-lg transition-shadow"
+                  >
+                    Xác nhận
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      </main>
+    </PageContainer>
+  );
+}

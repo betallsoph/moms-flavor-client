@@ -20,8 +20,8 @@ export default function LoginPage() {
 
     try {
       await login(email, password);
-      // Chuyển đến trang dashboard sau khi đăng nhập thành công
-      router.push('/dashboard');
+      // Chuyển đến trang chủ sau khi đăng nhập thành công
+      router.push('/home');
     } catch (err: any) {
       setError(err.message || 'Đã xảy ra lỗi khi đăng nhập');
     } finally {
@@ -35,7 +35,7 @@ export default function LoginPage() {
 
     try {
       await loginWithGoogle();
-      router.push('/dashboard');
+      router.push('/home');
     } catch (err: any) {
       setError(err.message || 'Đã xảy ra lỗi khi đăng nhập với Google');
     } finally {
@@ -61,16 +61,16 @@ export default function LoginPage() {
 
             <div>
               <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
-                Email
+                Email hoặc tên đăng nhập
               </label>
               <input
                 id="email"
-                type="email"
+                type="text"
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
-                placeholder="your@email.com"
+                placeholder="Nhập bất kỳ gì"
               />
             </div>
 

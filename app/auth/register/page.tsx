@@ -43,8 +43,8 @@ export default function RegisterPage() {
 
     try {
       await register(formData.name, formData.email, formData.password);
-      // Chuyển đến trang dashboard sau khi đăng ký thành công
-      router.push('/dashboard');
+      // Chuyển đến trang chủ sau khi đăng ký thành công
+      router.push('/home');
     } catch (err: any) {
       setError(err.message || 'Đã xảy ra lỗi khi đăng ký');
     } finally {
@@ -58,7 +58,7 @@ export default function RegisterPage() {
 
     try {
       await loginWithGoogle();
-      router.push('/dashboard');
+      router.push('/home');
     } catch (err: any) {
       setError(err.message || 'Đã xảy ra lỗi khi đăng ký với Google');
     } finally {
@@ -100,17 +100,17 @@ export default function RegisterPage() {
 
             <div>
               <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
-                Email
+                Email hoặc tên đăng nhập
               </label>
               <input
                 id="email"
                 name="email"
-                type="email"
+                type="text"
                 required
                 value={formData.email}
                 onChange={handleChange}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none"
-                placeholder="your@email.com"
+                placeholder="Nhập bất kỳ gì"
               />
             </div>
 
