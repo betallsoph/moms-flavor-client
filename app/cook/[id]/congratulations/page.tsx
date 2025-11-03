@@ -63,7 +63,11 @@ export default function CongratulationsPage() {
 
           <div className="flex flex-col gap-3">
             <button
-              onClick={() => router.push(`/recipes/${recipeId}`)}
+              onClick={() => {
+                // Clear cache to force reload on recipe detail page
+                localStorage.removeItem('selectedRecipe');
+                router.push(`/recipes/${recipeId}`);
+              }}
               className="bg-gradient-to-r from-orange-600 to-amber-600 text-white font-bold py-4 px-8 rounded-xl hover:shadow-lg transition-shadow text-lg"
             >
               ← Quay lại chi tiết công thức

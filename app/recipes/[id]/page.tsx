@@ -47,8 +47,17 @@ export default function RecipeDetailPage() {
       loadRecipe();
     };
     
+    // Also reload on mount and when selectedRecipe is cleared
+    const handleStorageChange = () => {
+      loadRecipe();
+    };
+
     window.addEventListener('focus', handleFocus);
-    return () => window.removeEventListener('focus', handleFocus);
+    window.addEventListener('storage', handleStorageChange);
+    return () => {
+      window.removeEventListener('focus', handleFocus);
+      window.removeEventListener('storage', handleStorageChange);
+    };
   }, [recipeId]);
 
   if (loading) {

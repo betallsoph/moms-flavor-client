@@ -92,13 +92,13 @@ export default function HomePage() {
         {/* Secondary Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-12">
           <ActionCard
-            onClick={() => {}}
-            icon="📋"
-            decorIcon="⏳"
-            title="Đang chuẩn bị"
-            description="Nơi để trống"
-            borderColor="border-gray-200 hover:border-gray-300"
-            bgColor="from-gray-100 to-gray-100"
+            onClick={() => router.push('/shopping-assistant')}
+            icon="🛒"
+            decorIcon="🧺"
+            title="Trợ lý đi chợ"
+            description="Lập danh sách mua sắm thông minh"
+            borderColor="border-blue-200 hover:border-blue-400"
+            bgColor="from-blue-100 to-cyan-100"
           />
           <ActionCard
             onClick={() => router.push('/cooking-diary')}
