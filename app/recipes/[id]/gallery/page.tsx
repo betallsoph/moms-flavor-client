@@ -3,6 +3,8 @@
 import { useEffect, useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { PageContainer, PageHeader, LoadingSpinner, GradientButton } from '@/components/ui';
+import DevModeButton from '@/components/DevModeButton';
+import { RecipeService } from '@/libs/recipeService';
 
 interface Recipe {
   id: string;
@@ -34,39 +36,41 @@ export default function GalleryPage() {
   const [saving, setSaving] = useState(false);
   const [tips, setTips] = useState('');
 
+  // Dev mode: Auto fill form (gallery page có tips field)
+  const handleDevFillForm = () => {
+    setTips('Mẹo nhỏ: Khi chụp ảnh món ăn, nên chụp dưới ánh sáng tự nhiên để màu sắc đẹp nhất. Đặt món ăn trên nền sáng để nổi bật hơn.');
+  };
+
   useEffect(() => {
-    // Load recipe from localStorage
-    const recipes = JSON.parse(localStorage.getItem('recipes') || '[]');
-    const found = recipes.find((r: Recipe) => r.id === recipeId);
-    if (found) {
-      setRecipe(found);
-      setTips(found.tips || '');
-    }
-    setLoading(false);
+    // Load recipe from RecipeService (Firestore with localStorage fallback)
+    const loadRecipe = async () => {
+      const found = await RecipeService.getById(recipeId);
+      if (found) {
+        setRecipe(found);
+        setTips(found.tips || '');
+      }
+      setLoading(false);
+    };
+    
+    loadRecipe();
   }, [recipeId]);
 
   const handleSaveAndContinue = async () => {
     setSaving(true);
     await new Promise(resolve => setTimeout(resolve, 800));
 
-    // Update recipe with tips
-    const recipes = JSON.parse(localStorage.getItem('recipes') || '[]');
-    const index = recipes.findIndex((r: Recipe) => r.id === recipeId);
-    if (index !== -1) {
-      recipes[index] = {
-        ...recipes[index],
+    // Update recipe with tips using RecipeService
+    try {
+      await RecipeService.update(recipeId, {
         tips: tips,
-      };
-      localStorage.setItem('recipes', JSON.stringify(recipes));
+      });
+    } catch (error) {
+      console.error('Error updating recipe:', error);
+      setSaving(false);
+      return;
     }
 
     setSaving(false);
-
-    // Trigger window focus event to refresh detail page
-    setTimeout(() => {
-      window.dispatchEvent(new Event('focus'));
-    }, 100);
-
     router.push(`/recipes/${recipeId}`);
   };
 
@@ -192,6 +196,9 @@ export default function GalleryPage() {
           </div>
         </div>
       </main>
+
+      {/* Dev Mode Button */}
+      <DevModeButton onFillForm={handleDevFillForm} />
     </PageContainer>
   );
 }

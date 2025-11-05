@@ -3,13 +3,8 @@
 import { useEffect, useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { PageContainer, LoadingSpinner, GradientButton } from '@/components/ui';
-
-interface Recipe {
-  id: string;
-  dishName?: string;
-  recipeName?: string;
-  createdAt: string;
-}
+import { RecipeService } from '@/libs/recipeService';
+import type { Recipe } from '@/types/recipe';
 
 export default function CongratulationsPage() {
   const router = useRouter();
@@ -19,13 +14,16 @@ export default function CongratulationsPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Load recipe from localStorage
-    const recipes = JSON.parse(localStorage.getItem('recipes') || '[]');
-    const found = recipes.find((r: Recipe) => r.id === recipeId);
-    if (found) {
-      setRecipe(found);
-    }
-    setLoading(false);
+    // Load recipe from RecipeService
+    const loadRecipe = async () => {
+      const found = await RecipeService.getById(recipeId);
+      if (found) {
+        setRecipe(found);
+      }
+      setLoading(false);
+    };
+    
+    loadRecipe();
   }, [recipeId]);
 
   if (loading) {

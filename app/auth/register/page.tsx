@@ -4,6 +4,8 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
+import DevModeButton from '@/components/DevModeButton';
+import { mockFormData } from '@/data/mockFormData';
 
 export default function RegisterPage() {
   const [formData, setFormData] = useState({
@@ -16,6 +18,16 @@ export default function RegisterPage() {
   const [loading, setLoading] = useState(false);
   const { register, loginWithGoogle } = useAuth();
   const router = useRouter();
+
+  // Dev mode: Auto fill form
+  const handleDevFillForm = () => {
+    setFormData({
+      name: mockFormData.register.name,
+      email: mockFormData.register.email,
+      password: mockFormData.register.password,
+      confirmPassword: mockFormData.register.password,
+    });
+  };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({
@@ -93,7 +105,7 @@ export default function RegisterPage() {
                 required
                 value={formData.name}
                 onChange={handleChange}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none text-base"
                 placeholder="Nguyễn Văn A"
               />
             </div>
@@ -109,7 +121,7 @@ export default function RegisterPage() {
                 required
                 value={formData.email}
                 onChange={handleChange}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none text-base"
                 placeholder="Nhập bất kỳ gì"
               />
             </div>
@@ -125,7 +137,7 @@ export default function RegisterPage() {
                 required
                 value={formData.password}
                 onChange={handleChange}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none text-base"
                 placeholder="••••••••"
               />
               <p className="mt-1 text-xs text-gray-500">Mật khẩu phải có ít nhất 6 ký tự</p>
@@ -142,7 +154,7 @@ export default function RegisterPage() {
                 required
                 value={formData.confirmPassword}
                 onChange={handleChange}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none text-base"
                 placeholder="••••••••"
               />
             </div>
@@ -247,6 +259,9 @@ export default function RegisterPage() {
           </div>
         </div>
       </div>
+
+      {/* Dev Mode Button */}
+      <DevModeButton onFillForm={handleDevFillForm} />
     </div>
   );
 }

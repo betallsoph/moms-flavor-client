@@ -3,7 +3,12 @@
 import { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { PageContainer, PageHeader } from '@/components/ui';
-import { Recipe } from '@/types/recipe';
+import { RecipeService } from '@/libs/recipeService';
+import type { Recipe } from '@/types/recipe';
+import DevModeButton from '@/components/DevModeButton';
+import { mockFormData } from '@/data/mockFormData';
+import { auth } from '@/libs/firebase';
+import * as firestoreService from '@/libs/firestore';
 
 interface CookingEntry {
   id: string;
@@ -26,32 +31,58 @@ export default function ReflectionPage() {
   const [uploadedImages, setUploadedImages] = useState<File[]>([]);
   const [recipeName, setRecipeName] = useState('');
 
+  // Dev mode: Auto fill form
+  const handleDevFillForm = () => {
+    setMistakes(mockFormData.reflection.mistakes);
+    setImprovements(mockFormData.reflection.improvements);
+  };
+
   useEffect(() => {
     // Load recipe name
-    const recipes = JSON.parse(localStorage.getItem('recipes') || '[]');
-    const recipe = recipes.find((r: Recipe) => r.id === recipeId);
-    if (recipe) {
-      setRecipeName(recipe.dishName || 'Món ăn');
-    }
+    const loadRecipe = async () => {
+      const recipe = await RecipeService.getById(recipeId);
+      if (recipe) {
+        setRecipeName(recipe.dishName || 'Món ăn');
+      }
+    };
+    
+    loadRecipe();
   }, [recipeId]);
 
-  const handleSaveAndContinue = () => {
-    // Create cooking diary entry
-    const entry: CookingEntry = {
-      id: `diary-${Date.now()}`,
-      recipeId,
-      dishName: recipeName,
-      cookDate: new Date().toLocaleDateString('vi-VN'),
-      mistakes,
-      improvements,
-      imageCount: uploadedImages.length,
-      timestamp: new Date().toISOString(),
-    };
-
-    // Save to cooking-diary in localStorage
-    const diary = JSON.parse(localStorage.getItem('cooking-diary') || '[]');
-    diary.push(entry);
-    localStorage.setItem('cooking-diary', JSON.stringify(diary));
+  const handleSaveAndContinue = async () => {
+    const userId = auth.currentUser?.uid;
+    
+    if (userId) {
+      // Save to Firestore
+      try {
+        await firestoreService.createDiaryEntry(userId, {
+          recipeId,
+          dishName: recipeName,
+          cookDate: new Date().toLocaleDateString('vi-VN'),
+          mistakes,
+          improvements,
+          imageCount: uploadedImages.length,
+        });
+      } catch (error) {
+        console.error('Error saving diary entry to Firestore:', error);
+      }
+    } else {
+      // Fallback to localStorage for non-authenticated users
+      const entry = {
+        id: `diary-${Date.now()}`,
+        recipeId,
+        dishName: recipeName,
+        cookDate: new Date().toLocaleDateString('vi-VN'),
+        mistakes,
+        improvements,
+        imageCount: uploadedImages.length,
+        timestamp: new Date().toISOString(),
+      };
+      
+      const diary = JSON.parse(localStorage.getItem('cooking-diary') || '[]');
+      diary.push(entry);
+      localStorage.setItem('cooking-diary', JSON.stringify(diary));
+    }
     
     router.push(`/cook/${recipeId}/congratulations`);
   };
@@ -88,7 +119,7 @@ export default function ReflectionPage() {
                 onChange={(e) => setMistakes(e.target.value)}
                 placeholder="Ví dụ: Nấu quá lâu nên cơm bị cháy, quên thêm muối..."
                 rows={4}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent resize-none"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent resize-none text-base"
               />
             </div>
 
@@ -103,7 +134,7 @@ export default function ReflectionPage() {
                 onChange={(e) => setImprovements(e.target.value)}
                 placeholder="Ví dụ: Lần sau nên dùng lửa nhỏ, cắt rau mỏng hơn..."
                 rows={4}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent resize-none"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent resize-none text-base"
               />
             </div>
 
@@ -118,7 +149,7 @@ export default function ReflectionPage() {
                 multiple
                 accept="image/*"
                 onChange={(e) => setUploadedImages(Array.from(e.target.files || []))}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent cursor-pointer"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent cursor-pointer"
               />
               {uploadedImages.length > 0 && (
                 <div className="mt-3 p-4 bg-green-50 border border-green-200 rounded-lg">
@@ -159,6 +190,9 @@ export default function ReflectionPage() {
           </div>
         </div>
       </main>
+
+      {/* Dev Mode Button */}
+      <DevModeButton onFillForm={handleDevFillForm} />
     </PageContainer>
   );
 }

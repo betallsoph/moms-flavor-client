@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { PageContainer, PageHeader, LoadingSpinner, GradientButton } from '@/components/ui';
+import { RecipeService } from '@/libs/recipeService';
 
 interface Recipe {
   id: string;
@@ -28,33 +29,39 @@ export default function RecipeDetailPage() {
   const [recipe, setRecipe] = useState<Recipe | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const loadRecipe = () => {
-    const recipes = JSON.parse(localStorage.getItem('recipes') || '[]');
-    const found = recipes.find((r: Recipe) => r.id === recipeId);
-    if (found) {
-      setRecipe(found);
-    }
-    setLoading(false);
-  };
-
   useEffect(() => {
+    let mounted = true;
+    
+    const loadRecipe = async () => {
+      setLoading(true);
+      setRecipe(null); // Clear previous recipe first
+      
+      const found = await RecipeService.getById(recipeId);
+      if (mounted) {
+        if (found) {
+          setRecipe(found);
+        }
+        setLoading(false);
+      }
+    };
+    
     loadRecipe();
-  }, [recipeId]);
 
-  // Reload recipe when user returns to this page
-  useEffect(() => {
+    // Reload recipe when window gets focus (user returns from another tab)
     const handleFocus = () => {
       loadRecipe();
     };
     
-    // Also reload on mount and when selectedRecipe is cleared
+    // Reload when localStorage changes (for non-authenticated users)
     const handleStorageChange = () => {
       loadRecipe();
     };
 
     window.addEventListener('focus', handleFocus);
     window.addEventListener('storage', handleStorageChange);
+    
     return () => {
+      mounted = false;
       window.removeEventListener('focus', handleFocus);
       window.removeEventListener('storage', handleStorageChange);
     };

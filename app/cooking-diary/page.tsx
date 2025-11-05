@@ -3,6 +3,8 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { PageContainer, PageHeader, LoadingSpinner, GradientButton } from '@/components/ui';
+import { auth } from '@/libs/firebase';
+import * as firestoreService from '@/libs/firestore';
 
 interface CookingEntry {
   id: string;
@@ -20,15 +22,26 @@ export default function CookingDiaryPage() {
   const [entries, setEntries] = useState<CookingEntry[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const loadEntries = () => {
-    // Load cooking entries from localStorage
-    const diaryData = localStorage.getItem('cooking-diary') || '[]';
-    const diary: CookingEntry[] = JSON.parse(diaryData);
+  const loadEntries = async () => {
+    const userId = auth.currentUser?.uid;
     
-    // Sort by date descending (newest first)
-    diary.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+    if (userId) {
+      // Load from Firestore
+      try {
+        const firestoreEntries = await firestoreService.getUserDiaryEntries(userId);
+        setEntries(firestoreEntries);
+      } catch (error) {
+        console.error('Error loading diary entries from Firestore:', error);
+        setEntries([]);
+      }
+    } else {
+      // Fallback to localStorage for non-authenticated users
+      const diaryData = localStorage.getItem('cooking-diary') || '[]';
+      const diary: CookingEntry[] = JSON.parse(diaryData);
+      diary.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+      setEntries(diary);
+    }
     
-    setEntries(diary);
     setLoading(false);
   };
 
@@ -45,9 +58,22 @@ export default function CookingDiaryPage() {
     return () => window.removeEventListener('focus', handleFocus);
   }, []);
 
-  const handleDelete = (id: string) => {
+  const handleDelete = async (id: string) => {
     const confirmed = confirm('Bạn có chắc muốn xóa entry này?');
-    if (confirmed) {
+    if (!confirmed) return;
+    
+    const userId = auth.currentUser?.uid;
+    
+    if (userId) {
+      // Delete from Firestore
+      try {
+        await firestoreService.deleteDiaryEntry(userId, id);
+        setEntries(entries.filter((e) => e.id !== id));
+      } catch (error) {
+        console.error('Error deleting diary entry:', error);
+      }
+    } else {
+      // Delete from localStorage
       const updated = entries.filter((e) => e.id !== id);
       localStorage.setItem('cooking-diary', JSON.stringify(updated));
       setEntries(updated);

@@ -3,6 +3,8 @@
 import { useEffect, useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { PageContainer, PageHeader, LoadingSpinner, GradientButton } from '@/components/ui';
+import { RecipeService } from '@/libs/recipeService';
+import type { Recipe } from '@/types/recipe';
 
 interface Instruction {
   id: string;
@@ -16,23 +18,6 @@ interface Instruction {
   note?: string;
 }
 
-interface Recipe {
-  id: string;
-  dishName?: string;
-  recipeName?: string;
-  difficulty?: string;
-  cookingTime?: string;
-  estimatedTime?: string;
-  instructor?: string;
-  description?: string;
-  ingredientsList?: Array<{ name: string; quantity: string; unit: string }>;
-  favoriteBrands?: string[];
-  specialNotes?: string;
-  instructions?: string;
-  tips?: string;
-  createdAt: string;
-}
-
 export default function CookModePage() {
   const router = useRouter();
   const params = useParams();
@@ -42,22 +27,25 @@ export default function CookModePage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Load recipe from localStorage
-    const recipes = JSON.parse(localStorage.getItem('recipes') || '[]');
-    const found = recipes.find((r: Recipe) => r.id === recipeId);
-    if (found) {
-      setRecipe(found);
-      // Parse instructions
-      if (found.instructions) {
-        try {
-          const parsed = JSON.parse(found.instructions);
-          setInstructions(Array.isArray(parsed) ? parsed : []);
-        } catch {
-          setInstructions([]);
+    // Load recipe from RecipeService
+    const loadRecipe = async () => {
+      const found = await RecipeService.getById(recipeId);
+      if (found) {
+        setRecipe(found);
+        // Parse instructions
+        if (found.instructions) {
+          try {
+            const parsed = JSON.parse(found.instructions);
+            setInstructions(Array.isArray(parsed) ? parsed : []);
+          } catch {
+            setInstructions([]);
+          }
         }
       }
-    }
-    setLoading(false);
+      setLoading(false);
+    };
+    
+    loadRecipe();
   }, [recipeId]);
 
   if (loading) {

@@ -72,11 +72,13 @@ export default function HomePage() {
         {/* Action Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-12">
           <ActionCard
-            onClick={() => router.push('/recipes/new')}
-            icon="➕"
-            decorIcon="📝"
-            title="Thêm công thức mới"
-            description="Chia sẻ công thức nấu ăn yêu thích của bạn"
+            onClick={() => router.push('/recipes/select-to-cook')}
+            icon="🍳"
+            decorIcon="�"
+            title="Nấu ngay"
+            description="Chọn công thức và bắt đầu nấu"
+            borderColor="border-red-200 hover:border-red-400"
+            bgColor="from-red-100 to-rose-100"
           />
           <ActionCard
             onClick={() => router.push('/recipes')}

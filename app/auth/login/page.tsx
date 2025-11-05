@@ -4,6 +4,8 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
+import DevModeButton from '@/components/DevModeButton';
+import { mockFormData } from '@/data/mockFormData';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
@@ -12,6 +14,12 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const { login, loginWithGoogle } = useAuth();
   const router = useRouter();
+
+  // Dev mode: Auto fill form
+  const handleDevFillForm = () => {
+    setEmail(mockFormData.login.email);
+    setPassword(mockFormData.login.password);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -69,7 +77,7 @@ export default function LoginPage() {
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none text-base"
                 placeholder="Nhập bất kỳ gì"
               />
             </div>
@@ -84,7 +92,7 @@ export default function LoginPage() {
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none text-base"
                 placeholder="••••••••"
               />
             </div>
@@ -186,6 +194,9 @@ export default function LoginPage() {
           </div>
         </div>
       </div>
+
+      {/* Dev Mode Button */}
+      <DevModeButton onFillForm={handleDevFillForm} />
     </div>
   );
 }

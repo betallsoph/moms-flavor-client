@@ -3,16 +3,10 @@
 import { useEffect, useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { PageContainer, PageHeader, LoadingSpinner, GradientButton } from '@/components/ui';
-
-interface Recipe {
-  id: string;
-  dishName?: string;
-  recipeName?: string;
-  ingredientsList?: Array<{ name: string; quantity: string; unit: string }>;
-  favoriteBrands?: string[];
-  specialNotes?: string;
-  createdAt: string;
-}
+import { auth } from '@/libs/firebase';
+import * as firestoreService from '@/libs/firestore';
+import { RecipeService } from '@/libs/recipeService';
+import type { Recipe } from '@/types/recipe';
 
 export default function IngredientsPage() {
   const router = useRouter();
@@ -25,20 +19,37 @@ export default function IngredientsPage() {
   const [showConfirmation, setShowConfirmation] = useState(false);
 
   useEffect(() => {
-    // Load recipe from localStorage
-    const recipes = JSON.parse(localStorage.getItem('recipes') || '[]');
-    const found = recipes.find((r: Recipe) => r.id === recipeId);
-    if (found) {
-      setRecipe(found);
-      // Initialize all items as unchecked
-      if (found.ingredientsList) {
-        const initialState: Record<number, boolean> = {};
-        found.ingredientsList.forEach((_: any, idx: number) => {
-          initialState[idx] = false;
-        });
-        setCheckedItems(initialState);
+    // Load recipe from RecipeService
+    const loadRecipe = async () => {
+      const found = await RecipeService.getById(recipeId);
+      if (found) {
+        setRecipe(found);
+        // Initialize all items as unchecked
+        if (found.ingredientsList) {
+          const initialState: Record<number, boolean> = {};
+          found.ingredientsList.forEach((_: any, idx: number) => {
+            initialState[idx] = false;
+          });
+          setCheckedItems(initialState);
+        }
       }
+      setLoading(false);
+    };
+    
+    loadRecipe();
+    
+    // Clear completed timers and active timers when starting fresh
+    const userId = auth.currentUser?.uid;
+    if (userId) {
+      // Clear from Firestore
+      firestoreService.clearCookingSession(userId, recipeId).catch(err => 
+        console.error('Error clearing session:', err)
+      );
     }
+    // Always clear localStorage as backup
+    localStorage.removeItem(`cook-completed-${recipeId}`);
+    localStorage.removeItem(`cook-timers-${recipeId}`);
+    
     setLoading(false);
   }, [recipeId]);
 
@@ -182,8 +193,8 @@ export default function IngredientsPage() {
 
           {/* Confirmation Modal */}
           {showConfirmation && (
-            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-              <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full p-8">
+            <div className="fixed inset-0 bg-gradient-to-br from-orange-100/90 via-amber-50/90 to-pink-100/90 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fadeIn">
+              <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full p-8 border-2 border-orange-200 animate-slideUp">
                 <h3 className="text-2xl font-bold text-gray-900 mb-6">Xác nhận chuẩn bị xong nguyên liệu</h3>
 
                 <div className="space-y-4 mb-8">
@@ -211,10 +222,10 @@ export default function IngredientsPage() {
                     Quay lại
                   </button>
                   <button
-                    onClick={() => router.push(`/cook/${recipeId}/overview`)}
+                    onClick={() => router.push(`/cook/${recipeId}/steps/1`)}
                     className="flex-1 bg-gradient-to-r from-orange-600 to-amber-600 text-white font-semibold py-3 px-6 rounded-lg hover:shadow-lg transition-shadow"
                   >
-                    Xác nhận
+                    Bắt đầu nấu
                   </button>
                 </div>
               </div>

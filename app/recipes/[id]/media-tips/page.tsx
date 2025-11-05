@@ -3,6 +3,8 @@
 import { useEffect, useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { PageContainer, PageHeader, LoadingSpinner, GradientButton } from '@/components/ui';
+import DevModeButton from '@/components/DevModeButton';
+import { RecipeService } from '@/libs/recipeService';
 
 interface Recipe {
   id: string;
@@ -32,15 +34,23 @@ export default function MediaTipsPage() {
   const [saving, setSaving] = useState(false);
   const [tips, setTips] = useState('');
 
+  // Dev mode: Auto fill form
+  const handleDevFillForm = () => {
+    setTips('Mẹo hay: Nên mua thịt tươi vào buổi sáng sớm để chọn được miếng đẹp. Khi nướng, hãy để lửa vừa để thịt chín đều và không bị khô. Nếu thích vị cay, có thể thêm ớt tươi băm vào nước chấm.');
+  };
+
   useEffect(() => {
-    // Load recipe from localStorage
-    const recipes = JSON.parse(localStorage.getItem('recipes') || '[]');
-    const found = recipes.find((r: Recipe) => r.id === recipeId);
-    if (found) {
-      setRecipe(found);
-      setTips(found.tips || '');
-    }
-    setLoading(false);
+    // Load recipe from RecipeService (Firestore with localStorage fallback)
+    const loadRecipe = async () => {
+      const found = await RecipeService.getById(recipeId);
+      if (found) {
+        setRecipe(found);
+        setTips(found.tips || '');
+      }
+      setLoading(false);
+    };
+    
+    loadRecipe();
   }, [recipeId]);
 
   const handleSaveAndContinue = async (e: React.FormEvent) => {
@@ -48,24 +58,18 @@ export default function MediaTipsPage() {
     setSaving(true);
     await new Promise(resolve => setTimeout(resolve, 800));
 
-    // Update recipe with tips
-    const recipes = JSON.parse(localStorage.getItem('recipes') || '[]');
-    const index = recipes.findIndex((r: Recipe) => r.id === recipeId);
-    if (index !== -1) {
-      recipes[index] = {
-        ...recipes[index],
+    // Update recipe with tips using RecipeService
+    try {
+      await RecipeService.update(recipeId, {
         tips: tips,
-      };
-      localStorage.setItem('recipes', JSON.stringify(recipes));
+      });
+    } catch (error) {
+      console.error('Error updating recipe:', error);
+      setSaving(false);
+      return;
     }
 
     setSaving(false);
-
-    // Trigger window focus event to refresh detail page
-    setTimeout(() => {
-      window.dispatchEvent(new Event('focus'));
-    }, 100);
-
     router.push(`/recipes/${recipeId}/gallery`);
   };
 
@@ -135,16 +139,14 @@ export default function MediaTipsPage() {
             <div className="flex gap-3 justify-end pt-6">
               <button
                 type="button"
-                onClick={() => {
+                onClick={async () => {
                   // Save tips and go to recipes list
-                  const recipes = JSON.parse(localStorage.getItem('recipes') || '[]');
-                  const index = recipes.findIndex((r: Recipe) => r.id === recipeId);
-                  if (index !== -1) {
-                    recipes[index] = {
-                      ...recipes[index],
+                  try {
+                    await RecipeService.update(recipeId, {
                       tips: tips,
-                    };
-                    localStorage.setItem('recipes', JSON.stringify(recipes));
+                    });
+                  } catch (error) {
+                    console.error('Error saving tips:', error);
                   }
                   router.push('/recipes');
                 }}
@@ -162,6 +164,9 @@ export default function MediaTipsPage() {
           </form>
         </div>
       </main>
+
+      {/* Dev Mode Button */}
+      <DevModeButton onFillForm={handleDevFillForm} />
     </PageContainer>
   );
 }

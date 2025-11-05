@@ -3,6 +3,8 @@
 import { useEffect, useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { PageContainer, PageHeader, LoadingSpinner, GradientButton } from '@/components/ui';
+import DevModeButton from '@/components/DevModeButton';
+import { RecipeService } from '@/libs/recipeService';
 
 interface Ingredient {
   id: string;
@@ -45,19 +47,30 @@ export default function CompleteRecipePage() {
   const [hasSpecialNotes, setHasSpecialNotes] = useState(false);
   const [specialNotes, setSpecialNotes] = useState('');
 
+  // Dev mode: Auto fill form
+  const handleDevFillForm = () => {
+    setHasSpecialNotes(true);
+    setSpecialNotes('Nên chọn thịt ba chỉ tươi, không đóng băng. Nếu muốn mềm hơn có thể luộc qua nước sôi trước khi nướng.');
+    setHasBrands(true);
+    setBrandsInput('Tương ớt Cholimex, Nước mắm Nam Ngư');
+  };
+
   useEffect(() => {
-    // Load recipe from localStorage
-    const recipes = JSON.parse(localStorage.getItem('recipes') || '[]');
-    const found = recipes.find((r: Recipe) => r.id === recipeId);
-    if (found) {
-      setRecipe(found);
-      setIngredients(found.ingredientsList || []);
-      setBrandsInput(found.favoriteBrands?.join(', ') || '');
-      setHasBrands(!!found.favoriteBrands?.length);
-      setSpecialNotes(found.specialNotes || '');
-      setHasSpecialNotes(!!found.specialNotes);
-    }
-    setLoading(false);
+    // Load recipe from RecipeService (Firestore with localStorage fallback)
+    const loadRecipe = async () => {
+      const found = await RecipeService.getById(recipeId);
+      if (found) {
+        setRecipe(found);
+        setIngredients(found.ingredientsList || []);
+        setBrandsInput(found.favoriteBrands?.join(', ') || '');
+        setHasBrands(!!found.favoriteBrands?.length);
+        setSpecialNotes(found.specialNotes || '');
+        setHasSpecialNotes(!!found.specialNotes);
+      }
+      setLoading(false);
+    };
+    
+    loadRecipe();
   }, [recipeId]);
 
   const addIngredient = () => {
@@ -87,26 +100,20 @@ export default function CompleteRecipePage() {
     setSaving(true);
     await new Promise(resolve => setTimeout(resolve, 800));
 
-    // Update recipe with all data
-    const recipes = JSON.parse(localStorage.getItem('recipes') || '[]');
-    const index = recipes.findIndex((r: Recipe) => r.id === recipeId);
-    if (index !== -1) {
-      recipes[index] = {
-        ...recipes[index],
+    // Update recipe with all data using RecipeService
+    try {
+      await RecipeService.update(recipeId, {
         ingredientsList: ingredients.filter(ing => ing.name.trim()),
         favoriteBrands: hasBrands ? brandsInput.split(',').map(b => b.trim()).filter(b => b) : [],
         specialNotes: hasSpecialNotes ? specialNotes : '',
-      };
-      localStorage.setItem('recipes', JSON.stringify(recipes));
+      });
+    } catch (error) {
+      console.error('Error updating recipe:', error);
+      setSaving(false);
+      return;
     }
 
     setSaving(false);
-
-    // Trigger window focus event to refresh detail page
-    setTimeout(() => {
-      window.dispatchEvent(new Event('focus'));
-    }, 100);
-
     router.push(`/recipes/${recipeId}/instructions`);
   };
 
@@ -268,18 +275,16 @@ export default function CompleteRecipePage() {
             <div className="flex gap-3 justify-end pt-6">
               <button
                 type="button"
-                onClick={() => {
+                onClick={async () => {
                   // Save all data and go to recipes list
-                  const recipes = JSON.parse(localStorage.getItem('recipes') || '[]');
-                  const index = recipes.findIndex((r: Recipe) => r.id === recipeId);
-                  if (index !== -1) {
-                    recipes[index] = {
-                      ...recipes[index],
+                  try {
+                    await RecipeService.update(recipeId, {
                       ingredientsList: ingredients.filter(ing => ing.name.trim()),
                       favoriteBrands: hasBrands ? brandsInput.split(',').map(b => b.trim()).filter(b => b) : [],
                       specialNotes: hasSpecialNotes ? specialNotes : '',
-                    };
-                    localStorage.setItem('recipes', JSON.stringify(recipes));
+                    });
+                  } catch (error) {
+                    console.error('Error saving recipe:', error);
                   }
                   router.push('/recipes');
                 }}
@@ -310,6 +315,9 @@ export default function CompleteRecipePage() {
           </div>
         </div>
       </main>
+
+      {/* Dev Mode Button */}
+      <DevModeButton onFillForm={handleDevFillForm} />
     </PageContainer>
   );
 }

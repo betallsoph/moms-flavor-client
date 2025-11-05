@@ -3,6 +3,8 @@
 import { useEffect, useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { PageContainer, PageHeader, LoadingSpinner, GradientButton } from '@/components/ui';
+import DevModeButton from '@/components/DevModeButton';
+import { RecipeService } from '@/libs/recipeService';
 
 interface Instruction {
   id: string;
@@ -44,30 +46,70 @@ export default function InstructionsPage() {
   const [saving, setSaving] = useState(false);
   const [instructions, setInstructions] = useState<Instruction[]>([]);
 
+  // Dev mode: Auto fill form
+  const handleDevFillForm = () => {
+    setInstructions([
+      {
+        id: '1',
+        step: 1,
+        title: 'Sơ chế nguyên liệu',
+        hasDescription: true,
+        description: 'Rửa sạch thịt, thái miếng vừa ăn. Rau củ rửa sạch, để ráo.',
+        needsTime: true,
+        duration: '10 phút',
+        hasNote: false,
+      },
+      {
+        id: '2',
+        step: 2,
+        title: 'Ướp gia vị',
+        hasDescription: true,
+        description: 'Ướp thịt với nước mắm, tiêu, tỏi băm. Để ít nhất 30 phút cho thịt thấm gia vị.',
+        needsTime: true,
+        duration: '30 phút',
+        hasNote: true,
+        note: 'Có thể ướp qua đêm để thịt thấm đều hơn',
+      },
+      {
+        id: '3',
+        step: 3,
+        title: 'Nấu chín',
+        hasDescription: true,
+        description: 'Cho dầu vào chảo, đợi nóng rồi cho thịt vào xào săn. Nêm nếm gia vị cho vừa khẩu vị.',
+        needsTime: true,
+        duration: '15 phút',
+        hasNote: false,
+      },
+    ]);
+  };
+
   useEffect(() => {
-    // Load recipe from localStorage
-    const recipes = JSON.parse(localStorage.getItem('recipes') || '[]');
-    const found = recipes.find((r: Recipe) => r.id === recipeId);
-    if (found) {
-      setRecipe(found);
-      // Parse instructions if they exist
-      if (found.instructions) {
-        try {
-          setInstructions(JSON.parse(found.instructions));
-        } catch {
-          // If not JSON, treat as plain text
-          setInstructions([
-            {
-              id: '1',
-              step: 1,
-              title: '',
-              description: found.instructions,
-            },
-          ]);
+    // Load recipe from RecipeService (Firestore with localStorage fallback)
+    const loadRecipe = async () => {
+      const found = await RecipeService.getById(recipeId);
+      if (found) {
+        setRecipe(found);
+        // Parse instructions if they exist
+        if (found.instructions) {
+          try {
+            setInstructions(JSON.parse(found.instructions));
+          } catch {
+            // If not JSON, treat as plain text
+            setInstructions([
+              {
+                id: '1',
+                step: 1,
+                title: '',
+                description: found.instructions,
+              },
+            ]);
+          }
         }
       }
-    }
-    setLoading(false);
+      setLoading(false);
+    };
+    
+    loadRecipe();
   }, [recipeId]);
 
   const addInstruction = () => {
@@ -104,24 +146,18 @@ export default function InstructionsPage() {
     setSaving(true);
     await new Promise(resolve => setTimeout(resolve, 800));
 
-    // Update recipe with instructions
-    const recipes = JSON.parse(localStorage.getItem('recipes') || '[]');
-    const index = recipes.findIndex((r: Recipe) => r.id === recipeId);
-    if (index !== -1) {
-      recipes[index] = {
-        ...recipes[index],
+    // Update recipe with instructions using RecipeService
+    try {
+      await RecipeService.update(recipeId, {
         instructions: JSON.stringify(instructions.filter(ing => ing.description.trim())),
-      };
-      localStorage.setItem('recipes', JSON.stringify(recipes));
+      });
+    } catch (error) {
+      console.error('Error updating recipe:', error);
+      setSaving(false);
+      return;
     }
 
     setSaving(false);
-
-    // Trigger window focus event to refresh detail page
-    setTimeout(() => {
-      window.dispatchEvent(new Event('focus'));
-    }, 100);
-
     router.push(`/recipes/${recipeId}`);
   };
 
@@ -130,24 +166,18 @@ export default function InstructionsPage() {
     setSaving(true);
     await new Promise(resolve => setTimeout(resolve, 800));
 
-    // Update recipe with instructions
-    const recipes = JSON.parse(localStorage.getItem('recipes') || '[]');
-    const index = recipes.findIndex((r: Recipe) => r.id === recipeId);
-    if (index !== -1) {
-      recipes[index] = {
-        ...recipes[index],
+    // Update recipe with instructions using RecipeService
+    try {
+      await RecipeService.update(recipeId, {
         instructions: JSON.stringify(instructions.filter(ing => ing.description.trim())),
-      };
-      localStorage.setItem('recipes', JSON.stringify(recipes));
+      });
+    } catch (error) {
+      console.error('Error updating recipe:', error);
+      setSaving(false);
+      return;
     }
 
     setSaving(false);
-
-    // Trigger window focus event to refresh detail page
-    setTimeout(() => {
-      window.dispatchEvent(new Event('focus'));
-    }, 100);
-
     router.push(`/recipes/${recipeId}/gallery`);
   };
 
@@ -336,6 +366,9 @@ export default function InstructionsPage() {
           </form>
         </div>
       </main>
+
+      {/* Dev Mode Button */}
+      <DevModeButton onFillForm={handleDevFillForm} />
     </PageContainer>
   );
 }

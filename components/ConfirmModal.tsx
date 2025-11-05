@@ -22,9 +22,9 @@ export default function ConfirmModal({
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
-      <div className="absolute inset-0 bg-black/40" onClick={onCancel} />
-      <div className="relative bg-white rounded-xl shadow-xl max-w-md w-full p-6 mx-4">
+    <div className="fixed inset-0 z-50 flex items-center justify-center animate-fadeIn">
+      <div className="absolute inset-0 bg-gradient-to-br from-orange-100/80 via-amber-50/80 to-pink-100/80 backdrop-blur-sm" onClick={onCancel} />
+      <div className="relative bg-white rounded-xl shadow-xl max-w-md w-full p-6 mx-4 border-2 border-orange-200 animate-slideUp">
         <h3 className="text-lg font-semibold mb-2">{title}</h3>
         {description && <p className="text-sm text-gray-600 mb-4">{description}</p>}
 

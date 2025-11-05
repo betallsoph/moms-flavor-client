@@ -3,20 +3,10 @@
 import { useEffect, useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { PageContainer, PageHeader, LoadingSpinner, GradientButton } from '@/components/ui';
-
-interface Recipe {
-  id: string;
-  dishName?: string;
-  recipeName?: string;
-  sameAsdish?: boolean;
-  difficulty?: string;
-  cookingTime?: string;
-  estimateTime?: boolean;
-  estimatedTime?: string;
-  instructor?: string;
-  description?: string;
-  createdAt: string;
-}
+import DevModeButton from '@/components/DevModeButton';
+import { getRandomRecipe } from '@/data/mockFormData';
+import { RecipeService } from '@/libs/recipeService';
+import type { Recipe } from '@/types/recipe';
 
 export default function EditRecipePage() {
   const router = useRouter();
@@ -26,14 +16,32 @@ export default function EditRecipePage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
+  // Dev mode: Auto fill form
+  const handleDevFillForm = () => {
+    if (!formData) return;
+    const mockData = getRandomRecipe();
+    setFormData({
+      ...formData,
+      dishName: mockData.dishName,
+      recipeName: mockData.recipeName,
+      difficulty: mockData.difficulty as any,
+      cookingTime: mockData.cookingTime as any,
+      instructor: mockData.instructor,
+      description: mockData.description,
+    });
+  };
+
   useEffect(() => {
-    // Load recipe from localStorage
-    const recipes = JSON.parse(localStorage.getItem('recipes') || '[]');
-    const found = recipes.find((r: Recipe) => r.id === recipeId);
-    if (found) {
-      setFormData(found);
-    }
-    setLoading(false);
+    // Load recipe from RecipeService (Firestore with localStorage fallback)
+    const loadRecipe = async () => {
+      const found = await RecipeService.getById(recipeId);
+      if (found) {
+        setFormData(found);
+      }
+      setLoading(false);
+    };
+    
+    loadRecipe();
   }, [recipeId]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
@@ -45,13 +53,13 @@ export default function EditRecipePage() {
       setFormData(prev => prev ? {
         ...prev,
         [name]: checked,
-        ...(name === 'sameAsdish' && checked ? { recipeName: prev.dishName } : {}),
+        ...(name === 'sameAsDish' && checked ? { recipeName: prev.dishName } : {}),
       } : null);
     } else {
       setFormData(prev => prev ? {
         ...prev,
         [name]: value,
-        ...(name === 'dishName' && prev.sameAsdish ? { recipeName: value } : {}),
+        ...(name === 'dishName' && prev.sameAsDish ? { recipeName: value } : {}),
       } : null);
     }
   };
@@ -63,21 +71,27 @@ export default function EditRecipePage() {
     setSaving(true);
     await new Promise(resolve => setTimeout(resolve, 800));
 
-    // Update recipe in localStorage
-    const recipes = JSON.parse(localStorage.getItem('recipes') || '[]');
-    const index = recipes.findIndex((r: Recipe) => r.id === recipeId);
-    if (index !== -1) {
-      recipes[index] = formData;
-      localStorage.setItem('recipes', JSON.stringify(recipes));
+    // Update recipe using RecipeService - extract only the fields that exist in formData
+    try {
+      const updates: Partial<typeof formData> = {
+        dishName: formData.dishName,
+        recipeName: formData.recipeName,
+        sameAsDish: formData.sameAsDish,
+        difficulty: formData.difficulty,
+        cookingTime: formData.cookingTime,
+        estimateTime: formData.estimateTime,
+        estimatedTime: formData.estimatedTime,
+        instructor: formData.instructor,
+        description: formData.description,
+      };
+      await RecipeService.update(recipeId, updates);
+    } catch (error) {
+      console.error('Error updating recipe:', error);
+      setSaving(false);
+      return;
     }
 
     setSaving(false);
-    
-    // Trigger window focus event to refresh detail page
-    setTimeout(() => {
-      window.dispatchEvent(new Event('focus'));
-    }, 100);
-    
     router.push(`/recipes/${recipeId}`);
   };
 
@@ -143,19 +157,19 @@ export default function EditRecipePage() {
                 value={formData.recipeName || ''}
                 onChange={handleChange}
                 required
-                disabled={formData.sameAsdish}
+                disabled={formData.sameAsDish}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed"
               />
               <div className="mt-2 flex items-center gap-2">
                 <input
                   type="checkbox"
-                  id="sameAsdish"
-                  name="sameAsdish"
-                  checked={formData.sameAsdish || false}
+                  id="sameAsDish"
+                  name="sameAsDish"
+                  checked={formData.sameAsDish || false}
                   onChange={handleChange}
                   className="w-4 h-4 text-orange-600 border-gray-300 rounded focus:ring-orange-500"
                 />
-                <label htmlFor="sameAsdish" className="text-sm text-gray-600">
+                <label htmlFor="sameAsDish" className="text-sm text-gray-600">
                   Cùng tên với tên món
                 </label>
               </div>
@@ -279,6 +293,9 @@ export default function EditRecipePage() {
           </form>
         </div>
       </main>
+
+      {/* Dev Mode Button */}
+      <DevModeButton onFillForm={handleDevFillForm} />
     </PageContainer>
   );
 }

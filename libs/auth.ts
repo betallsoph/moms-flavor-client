@@ -1,82 +1,77 @@
-// Mock authentication service (NO FIREBASE)
+// Firebase authentication service
+import { 
+  signInWithEmailAndPassword, 
+  createUserWithEmailAndPassword,
+  signInWithPopup,
+  GoogleAuthProvider,
+  signOut,
+  onAuthStateChanged as firebaseOnAuthStateChanged,
+  updateProfile,
+  User as FirebaseUser
+} from 'firebase/auth';
+import { auth } from './firebase';
+
 export interface User {
   id: string;
   email: string;
   name: string;
 }
 
+// Helper function to convert Firebase User to our User interface
+const mapFirebaseUser = (firebaseUser: FirebaseUser): User => {
+  return {
+    id: firebaseUser.uid,
+    email: firebaseUser.email || '',
+    name: firebaseUser.displayName || firebaseUser.email?.split('@')[0] || 'User',
+  };
+};
+
 export const authService = {
-  // Mock login - chấp nhận bất kỳ thông tin nào
+  // Login với email và password
   login: async (email: string, password: string): Promise<User> => {
-    await new Promise(resolve => setTimeout(resolve, 500));
-    
-    const user: User = {
-      id: Math.random().toString(36).substr(2, 9),
-      email: email || 'user@app.com',
-      name: email.split('@')[0] || email || 'User',
-    };
-    
-    localStorage.setItem('user', JSON.stringify(user));
-    localStorage.setItem('isAuthenticated', 'true');
-    return user;
+    const userCredential = await signInWithEmailAndPassword(auth, email, password);
+    return mapFirebaseUser(userCredential.user);
   },
 
-  // Mock register - chấp nhận bất kỳ thông tin nào
+  // Register với email, password và name
   register: async (name: string, email: string, password: string): Promise<User> => {
-    await new Promise(resolve => setTimeout(resolve, 500));
+    const userCredential = await createUserWithEmailAndPassword(auth, email, password);
     
-    const user: User = {
-      id: Math.random().toString(36).substr(2, 9),
-      email: email || 'user@app.com',
-      name: name || 'User',
-    };
+    // Cập nhật display name
+    await updateProfile(userCredential.user, {
+      displayName: name,
+    });
     
-    localStorage.setItem('user', JSON.stringify(user));
-    localStorage.setItem('isAuthenticated', 'true');
-    return user;
+    return mapFirebaseUser(userCredential.user);
   },
 
-  // Mock Google login - tự động tạo user
+  // Login với Google
   loginWithGoogle: async (): Promise<User> => {
-    await new Promise(resolve => setTimeout(resolve, 800));
-    
-    const user: User = {
-      id: Math.random().toString(36).substr(2, 9),
-      email: `user${Math.random().toString(36).substr(2, 5)}@gmail.com`,
-      name: `Google User ${Math.random().toString(36).substr(2, 5)}`,
-    };
-    
-    localStorage.setItem('user', JSON.stringify(user));
-    localStorage.setItem('isAuthenticated', 'true');
-    return user;
+    const provider = new GoogleAuthProvider();
+    const userCredential = await signInWithPopup(auth, provider);
+    return mapFirebaseUser(userCredential.user);
   },
 
   // Đăng xuất
-  logout: () => {
-    localStorage.removeItem('user');
-    localStorage.removeItem('isAuthenticated');
+  logout: async () => {
+    await signOut(auth);
   },
 
   // Lấy thông tin user hiện tại
   getCurrentUser: (): User | null => {
-    const userStr = localStorage.getItem('user');
-    const isAuthenticated = localStorage.getItem('isAuthenticated');
-    
-    if (isAuthenticated === 'true' && userStr) {
-      return JSON.parse(userStr);
-    }
-    return null;
+    const firebaseUser = auth.currentUser;
+    return firebaseUser ? mapFirebaseUser(firebaseUser) : null;
   },
 
   // Kiểm tra đã đăng nhập chưa
   isAuthenticated: (): boolean => {
-    return localStorage.getItem('isAuthenticated') === 'true';
+    return auth.currentUser !== null;
   },
 
   // Lắng nghe auth state changes
   onAuthStateChanged: (callback: (user: User | null) => void) => {
-    const currentUser = authService.getCurrentUser();
-    callback(currentUser);
-    return () => {};
+    return firebaseOnAuthStateChanged(auth, (firebaseUser) => {
+      callback(firebaseUser ? mapFirebaseUser(firebaseUser) : null);
+    });
   },
 };
