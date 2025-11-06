@@ -1,9 +1,53 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { RecipeService } from '@/libs/recipeService';
+import type { Recipe } from '@/types/recipe';
+import { LoadingSpinner } from '@/components/ui';
 
 export default function WhatsCookingPage() {
   const router = useRouter();
+  const [recipes, setRecipes] = useState<Recipe[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [suggestedRecipes, setSuggestedRecipes] = useState<Recipe[]>([]);
+
+  useEffect(() => {
+    loadRecipes();
+  }, []);
+
+  const loadRecipes = async () => {
+    try {
+      setLoading(true);
+      const allRecipes = await RecipeService.getAll();
+      setRecipes(allRecipes);
+      
+      // Get 3 random recipes for suggestions
+      if (allRecipes.length > 0) {
+        const shuffled = [...allRecipes].sort(() => 0.5 - Math.random());
+        setSuggestedRecipes(shuffled.slice(0, 3));
+      }
+    } catch (error) {
+      console.error('Error loading recipes:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleRefresh = () => {
+    if (recipes.length > 0) {
+      const shuffled = [...recipes].sort(() => 0.5 - Math.random());
+      setSuggestedRecipes(shuffled.slice(0, 3));
+    }
+  };
+
+  const handleCookNow = (recipeId: string) => {
+    router.push(`/cook/${recipeId}/start-confirmation`);
+  };
+
+  if (loading) {
+    return <LoadingSpinner />;
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50">
@@ -24,7 +68,7 @@ export default function WhatsCookingPage() {
       {/* Main Content */}
       <main className="max-w-6xl mx-auto px-6 py-12">
         <div className="bg-white rounded-2xl shadow-lg border border-blue-100 p-12">
-          <div className="max-w-2xl mx-auto">
+          <div className="max-w-4xl mx-auto">
             <div className="w-32 h-32 bg-gradient-to-br from-blue-100 to-indigo-100 rounded-full flex items-center justify-center mx-auto mb-8">
               <span className="text-6xl">🎯</span>
             </div>
@@ -33,13 +77,102 @@ export default function WhatsCookingPage() {
               Gợi ý hôm nay
             </h2>
             
-            <p className="text-gray-600 text-center text-lg mb-12">
-              Tính năng gợi ý công thức hàng ngày sẽ sớm có mặt. 
-              Hãy quay lại sau để khám phá các món ăn tuyệt vời!
-            </p>
-            <p className="text-xs text-gray-400 text-center">Chỗ này áp dụng Naver AiTEMS vô được nè</p>
+            {recipes.length === 0 ? (
+              <div className="text-center">
+                <p className="text-gray-600 text-lg mb-8">
+                  Chưa có công thức nào. Hãy tạo công thức đầu tiên của bạn!
+                </p>
+                <button
+                  onClick={() => router.push('/recipes/new')}
+                  className="bg-gradient-to-r from-orange-600 to-amber-600 text-white font-semibold py-3 px-6 rounded-lg hover:shadow-lg transition-shadow"
+                >
+                  ➕ Tạo công thức mới
+                </button>
+              </div>
+            ) : (
+              <>
+                <p className="text-gray-600 text-center text-lg mb-8">
+                  Dưới đây là những gợi ý món ăn cho bạn hôm nay! 🍳
+                </p>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
+                {/* Suggested Recipes */}
+                {suggestedRecipes.length > 0 && (
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                    {suggestedRecipes.map((recipe) => (
+                      <div
+                        key={recipe.id}
+                        className="bg-gradient-to-br from-orange-50 to-amber-50 rounded-xl p-6 border border-orange-200 hover:shadow-lg transition-shadow cursor-pointer"
+                        onClick={() => handleCookNow(recipe.id)}
+                      >
+                        {recipe.coverImage && (
+                          <div className="w-full h-40 mb-4 rounded-lg overflow-hidden bg-gray-100">
+                            <img
+                              src={recipe.coverImage}
+                              alt={recipe.dishName}
+                              className="w-full h-full object-cover"
+                            />
+                          </div>
+                        )}
+                        <div className="text-3xl mb-3">
+                          {recipe.dishName?.includes('gà') ? '🍗' : 
+                           recipe.dishName?.includes('cá') ? '🐟' :
+                           recipe.dishName?.includes('rau') ? '🥬' :
+                           recipe.dishName?.includes('canh') ? '🍲' : '🍽️'}
+                        </div>
+                        <h3 className="font-bold text-gray-900 mb-2 text-lg">
+                          {recipe.dishName || recipe.recipeName}
+                        </h3>
+                        <div className="flex items-center gap-2 mb-2 text-sm text-gray-600">
+                          <span>⏱️</span>
+                          <span>
+                            {recipe.cookingTime === 'very_fast' ? '< 15 phút' :
+                             recipe.cookingTime === 'fast' ? '15-30 phút' :
+                             recipe.cookingTime === 'medium' ? '30-60 phút' :
+                             recipe.cookingTime === 'slow' ? '1-2 giờ' : '> 2 giờ'}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-2 mb-4 text-sm text-gray-600">
+                          <span>⭐</span>
+                          <span>
+                            {recipe.difficulty === 'very_easy' ? 'Rất dễ' :
+                             recipe.difficulty === 'easy' ? 'Dễ' :
+                             recipe.difficulty === 'medium' ? 'Trung bình' :
+                             recipe.difficulty === 'hard' ? 'Khó' : 'Rất khó'}
+                          </span>
+                        </div>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleCookNow(recipe.id);
+                          }}
+                          className="w-full bg-gradient-to-r from-orange-600 to-amber-600 text-white font-semibold py-2 px-4 rounded-lg hover:shadow-md transition-shadow text-sm"
+                        >
+                          🔥 Nấu ngay
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Action Buttons */}
+                <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                  <button
+                    onClick={handleRefresh}
+                    className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-semibold py-3 px-8 rounded-lg hover:shadow-lg transition-shadow"
+                  >
+                    🔄 Gợi ý khác
+                  </button>
+                  <button
+                    onClick={() => router.push('/recipes/select-to-cook')}
+                    className="bg-white border-2 border-blue-600 text-blue-600 font-semibold py-3 px-8 rounded-lg hover:bg-blue-50 transition-colors"
+                  >
+                    📖 Xem tất cả công thức
+                  </button>
+                </div>
+              </>
+            )}
+
+            <div className="mt-12 grid grid-cols-1 md:grid-cols-3 gap-6">
               {/* Feature Card 1 */}
               <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl p-6 border border-blue-200">
                 <div className="text-3xl mb-3">🎲</div>
@@ -68,12 +201,14 @@ export default function WhatsCookingPage() {
               </div>
             </div>
 
-            <button
-              onClick={() => router.back()}
-              className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-semibold py-3 px-6 rounded-lg hover:shadow-lg transition-shadow"
-            >
-              Quay lại Dashboard
-            </button>
+            <div className="mt-8 text-center">
+              <button
+                onClick={() => router.push('/home')}
+                className="text-blue-600 hover:text-blue-700 font-semibold"
+              >
+                ← Quay lại Dashboard
+              </button>
+            </div>
           </div>
         </div>
       </main>
