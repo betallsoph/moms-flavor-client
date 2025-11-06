@@ -3,17 +3,8 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { PageContainer, PageHeader, LoadingSpinner } from '@/components/ui';
-
-interface Recipe {
-  id: string;
-  dishName?: string;
-  recipeName?: string;
-  difficulty?: string;
-  cookingTime?: string;
-  description?: string;
-  instructor?: string;
-  createdAt: string;
-}
+import { RecipeService } from '@/libs/recipeService';
+import type { Recipe } from '@/types/recipe';
 
 export default function SelectToCookPage() {
   const router = useRouter();
@@ -21,13 +12,20 @@ export default function SelectToCookPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const loadRecipes = async () => {
-      const data = JSON.parse(localStorage.getItem('recipes') || '[]');
-      setRecipes(data);
-      setLoading(false);
-    };
     loadRecipes();
   }, []);
+
+  const loadRecipes = async () => {
+    try {
+      setLoading(true);
+      const data = await RecipeService.getAll();
+      setRecipes(data);
+    } catch (error) {
+      console.error('Error loading recipes:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const getDifficultyText = (level?: string) => {
     switch (level) {
