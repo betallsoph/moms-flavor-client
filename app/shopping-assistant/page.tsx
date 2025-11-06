@@ -3,6 +3,8 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { PageContainer, PageHeader, LoadingSpinner, GradientButton } from '@/components/ui';
+import DevModeButton from '@/components/DevModeButton';
+import { mockFormData } from '@/data/mockFormData';
 
 interface ShoppingItem {
   id: string;
@@ -29,6 +31,14 @@ export default function ShoppingAssistantPage() {
   const [newItemQuantity, setNewItemQuantity] = useState('1');
   const [newItemUnit, setNewItemUnit] = useState('cái');
   const [newItemCategory, setNewItemCategory] = useState<'rau-cu' | 'thit-ca' | 'gia-vi' | 'khac'>('khac');
+
+  // Dev mode: Auto fill form
+  const handleDevFillForm = () => {
+    setNewItemName(mockFormData.shoppingItem.name);
+    setNewItemQuantity(mockFormData.shoppingItem.quantity);
+    setNewItemUnit(mockFormData.shoppingItem.unit);
+    setNewItemCategory(mockFormData.shoppingItem.category as 'rau-cu' | 'thit-ca' | 'gia-vi' | 'khac');
+  };
 
   const loadItems = () => {
     const saved = localStorage.getItem('shopping-list') || '[]';
@@ -147,13 +157,13 @@ export default function ShoppingAssistantPage() {
                 value={newItemName}
                 onChange={(e) => setNewItemName(e.target.value)}
                 placeholder="Tên mục (ví dụ: Cà chua)"
-                className="col-span-1 md:col-span-2 px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="col-span-1 md:col-span-2 px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-base"
                 onKeyPress={(e) => e.key === 'Enter' && handleAddItem()}
               />
               <select
                 value={newItemCategory}
                 onChange={(e) => setNewItemCategory(e.target.value as any)}
-                className="px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-base"
               >
                 {Object.entries(CATEGORIES).map(([key, val]) => (
                   <option key={key} value={key}>
@@ -170,14 +180,14 @@ export default function ShoppingAssistantPage() {
                 onChange={(e) => setNewItemQuantity(e.target.value)}
                 placeholder="Số lượng"
                 min="1"
-                className="px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-base"
               />
               <input
                 type="text"
                 value={newItemUnit}
                 onChange={(e) => setNewItemUnit(e.target.value)}
                 placeholder="Đơn vị (cái, kg, lít...)"
-                className="col-span-1 md:col-span-2 px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="col-span-1 md:col-span-2 px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-base"
               />
             </div>
 
@@ -275,6 +285,9 @@ export default function ShoppingAssistantPage() {
           </div>
         )}
       </main>
+
+      {/* Dev Mode Button */}
+      <DevModeButton onFillForm={handleDevFillForm} />
     </PageContainer>
   );
 }

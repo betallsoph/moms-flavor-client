@@ -1,8 +1,9 @@
 'use client';
 
 import { useRouter, useSearchParams } from 'next/navigation';
+import { Suspense } from 'react';
 
-export default function ConfirmRecipePage() {
+function ConfirmRecipeContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const recipeId = searchParams.get('id');
@@ -65,5 +66,13 @@ export default function ConfirmRecipePage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function ConfirmRecipePage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center">Loading...</div>}>
+      <ConfirmRecipeContent />
+    </Suspense>
   );
 }

@@ -4,6 +4,8 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { RecipeService } from '@/libs/recipeService';
 import { Recipe } from '@/types/recipe';
+import DevModeButton from '@/components/DevModeButton';
+import { getRandomRecipe } from '@/data/mockFormData';
 
 export default function NewRecipePage() {
   const router = useRouter();
@@ -19,6 +21,21 @@ export default function NewRecipePage() {
     description: '',
   });
   const [loading, setLoading] = useState(false);
+
+  // Dev mode: Auto fill form
+  const handleDevFillForm = () => {
+    const mockData = getRandomRecipe();
+    setFormData({
+      ...formData,
+      dishName: mockData.dishName,
+      recipeName: mockData.recipeName,
+      difficulty: mockData.difficulty,
+      cookingTime: mockData.cookingTime,
+      instructor: mockData.instructor,
+      description: mockData.description,
+      sameAsDish: false,
+    });
+  };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, type } = e.target;
@@ -144,7 +161,7 @@ export default function NewRecipePage() {
                 onChange={handleChange}
                 required
                 placeholder="VD: Cơm chiên Thái, Phở bò..."
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent text-base"
               />
             </div>
 
@@ -162,7 +179,7 @@ export default function NewRecipePage() {
                 required
                 disabled={formData.sameAsDish}
                 placeholder="VD: Cơm chiên kiểu nhà hàng..."
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent text-base disabled:bg-gray-100 disabled:cursor-not-allowed"
               />
               <div className="mt-2 flex items-center gap-2">
                 <input
@@ -190,7 +207,7 @@ export default function NewRecipePage() {
                 value={formData.difficulty}
                 onChange={handleChange}
                 required
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent text-base"
               >
                 <option value="very_easy">⭐ Rất dễ</option>
                 <option value="easy">⭐⭐ Dễ</option>
@@ -211,7 +228,7 @@ export default function NewRecipePage() {
                 value={formData.cookingTime}
                 onChange={handleChange}
                 required
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent text-base"
               >
                 <option value="very_fast">⚡ Rất nhanh (&lt; 15 phút)</option>
                 <option value="fast">⏱️ Nhanh (15-30 phút)</option>
@@ -239,7 +256,7 @@ export default function NewRecipePage() {
                   value={formData.estimatedTime}
                   onChange={handleChange}
                   placeholder="VD: 45 phút, 1 giờ 30 phút..."
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent mt-2"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent text-base mt-2"
                 />
               )}
             </div>
@@ -256,7 +273,7 @@ export default function NewRecipePage() {
                 value={formData.instructor}
                 onChange={handleChange}
                 placeholder="VD: Mẹ, Ông, Bà, Cô, Bạn bè..."
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent text-base"
               />
               <p className="mt-1 text-xs text-gray-500">
                 💡 Gõ tên để thêm mới hoặc chọn từ danh sách có sẵn
@@ -276,7 +293,7 @@ export default function NewRecipePage() {
                 required
                 placeholder="Mô tả về món ăn và công thức nấu..."
                 rows={6}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent resize-none"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent text-base resize-none"
               />
             </div>
 
@@ -301,6 +318,9 @@ export default function NewRecipePage() {
           </div>
         </div>
       </main>
+
+      {/* Dev Mode Button */}
+      <DevModeButton onFillForm={handleDevFillForm} />
     </div>
   );
 }

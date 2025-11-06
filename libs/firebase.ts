@@ -1,5 +1,6 @@
 import { initializeApp, getApps, getApp } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
+import { getFirestore } from 'firebase/firestore';
 
 // Firebase configuration từ environment variables
 const firebaseConfig = {
@@ -16,4 +17,8 @@ const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
 
 // Export auth instance
 export const auth = getAuth(app);
+
+// Export firestore instance
+export const db = getFirestore(app);
+
 export default app;

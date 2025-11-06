@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { PageContainer, PageHeader, LoadingSpinner, GradientButton } from '@/components/ui';
+import { RecipeService } from '@/libs/recipeService';
 
 interface Recipe {
   id: string;
@@ -18,6 +19,8 @@ interface Recipe {
   specialNotes?: string;
   instructions?: string;
   tips?: string;
+  coverImage?: string;
+  galleryImages?: string[];
   createdAt: string;
 }
 
@@ -28,33 +31,39 @@ export default function RecipeDetailPage() {
   const [recipe, setRecipe] = useState<Recipe | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const loadRecipe = () => {
-    const recipes = JSON.parse(localStorage.getItem('recipes') || '[]');
-    const found = recipes.find((r: Recipe) => r.id === recipeId);
-    if (found) {
-      setRecipe(found);
-    }
-    setLoading(false);
-  };
-
   useEffect(() => {
+    let mounted = true;
+    
+    const loadRecipe = async () => {
+      setLoading(true);
+      setRecipe(null); // Clear previous recipe first
+      
+      const found = await RecipeService.getById(recipeId);
+      if (mounted) {
+        if (found) {
+          setRecipe(found);
+        }
+        setLoading(false);
+      }
+    };
+    
     loadRecipe();
-  }, [recipeId]);
 
-  // Reload recipe when user returns to this page
-  useEffect(() => {
+    // Reload recipe when window gets focus (user returns from another tab)
     const handleFocus = () => {
       loadRecipe();
     };
     
-    // Also reload on mount and when selectedRecipe is cleared
+    // Reload when localStorage changes (for non-authenticated users)
     const handleStorageChange = () => {
       loadRecipe();
     };
 
     window.addEventListener('focus', handleFocus);
     window.addEventListener('storage', handleStorageChange);
+    
     return () => {
+      mounted = false;
       window.removeEventListener('focus', handleFocus);
       window.removeEventListener('storage', handleStorageChange);
     };
@@ -134,13 +143,16 @@ export default function RecipeDetailPage() {
 
       {/* Main Content */}
       <main className="max-w-4xl mx-auto px-6 py-12">
-        {/* Avatar Section */}
-        <div className="mb-12 text-center">
-          <div className="inline-block w-48 h-48 bg-gradient-to-br from-orange-100 to-amber-100 rounded-3xl flex items-center justify-center shadow-lg mb-6">
-            <span className="text-9xl">🍳</span>
+        {/* Cover Image - Hero (nếu có) */}
+        {recipe.coverImage && (
+          <div className="mb-12 rounded-3xl overflow-hidden shadow-2xl border-4 border-orange-200">
+            <img 
+              src={recipe.coverImage} 
+              alt={recipe.dishName || recipe.recipeName || 'Món ăn'}
+              className="w-full h-96 object-cover"
+            />
           </div>
-          <p className="text-xs text-gray-500 mt-2">Hình đại diện (chưa có ảnh thật)</p>
-        </div>
+        )}
 
         {/* Dish Name */}
         <div className="mb-12 text-center">
@@ -303,6 +315,32 @@ export default function RecipeDetailPage() {
             )}
           </div>
         </div>
+
+        {/* Gallery Images Section - Vertical Layout */}
+        {recipe.galleryImages && recipe.galleryImages.length > 0 && (
+          <div className="bg-white rounded-2xl shadow-lg border border-orange-100 p-8 mb-12">
+            <h3 className="text-2xl font-bold text-gray-900 mb-6 flex items-center gap-2">
+              <span>🖼️</span> Hình ảnh chi tiết
+            </h3>
+            <div className="space-y-6">
+              {recipe.galleryImages.map((imageUrl, index) => (
+                <div 
+                  key={index} 
+                  className="relative rounded-2xl overflow-hidden shadow-lg border-2 border-gray-200"
+                >
+                  <img
+                    src={imageUrl}
+                    alt={`${recipe.dishName || 'Món ăn'} - Ảnh ${index + 1}`}
+                    className="w-full h-auto object-cover"
+                  />
+                  <div className="absolute bottom-4 right-4 bg-black bg-opacity-60 text-white px-3 py-1 rounded-full text-sm font-semibold">
+                    {index + 1}/{recipe.galleryImages?.length || 0}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Edit Button */}
         <div className="flex gap-4 justify-center mb-12">
