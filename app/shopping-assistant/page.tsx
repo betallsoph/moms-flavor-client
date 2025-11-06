@@ -3,8 +3,6 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { PageContainer, PageHeader, LoadingSpinner, GradientButton } from '@/components/ui';
-import DevModeButton from '@/components/DevModeButton';
-import { mockFormData } from '@/data/mockFormData';
 
 interface ShoppingItem {
   id: string;
@@ -31,14 +29,6 @@ export default function ShoppingAssistantPage() {
   const [newItemQuantity, setNewItemQuantity] = useState('1');
   const [newItemUnit, setNewItemUnit] = useState('cái');
   const [newItemCategory, setNewItemCategory] = useState<'rau-cu' | 'thit-ca' | 'gia-vi' | 'khac'>('khac');
-
-  // Dev mode: Auto fill form
-  const handleDevFillForm = () => {
-    setNewItemName(mockFormData.shoppingItem.name);
-    setNewItemQuantity(mockFormData.shoppingItem.quantity);
-    setNewItemUnit(mockFormData.shoppingItem.unit);
-    setNewItemCategory(mockFormData.shoppingItem.category as 'rau-cu' | 'thit-ca' | 'gia-vi' | 'khac');
-  };
 
   const loadItems = () => {
     const saved = localStorage.getItem('shopping-list') || '[]';
@@ -285,9 +275,6 @@ export default function ShoppingAssistantPage() {
           </div>
         )}
       </main>
-
-      {/* Dev Mode Button */}
-      <DevModeButton onFillForm={handleDevFillForm} />
     </PageContainer>
   );
 }

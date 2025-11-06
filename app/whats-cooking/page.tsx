@@ -7,28 +7,16 @@ export default function WhatsCookingPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50">
-      {/* Header with Back Button */}
+      {/* Header - Simple, no back button */}
       <header className="border-b border-blue-100 bg-white/80 backdrop-blur-sm sticky top-0 z-50">
         <div className="max-w-6xl mx-auto px-6 py-4">
-          <div className="flex items-center justify-between">
-            <button
-              onClick={() => router.back()}
-              className="flex items-center gap-2 px-4 py-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
-            >
-              <span className="text-xl">←</span>
-              <span className="text-sm font-medium">Quay lại</span>
-            </button>
-            
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-gradient-to-br from-blue-400 to-indigo-500 rounded-xl flex items-center justify-center shadow-sm">
-                <span className="text-white text-xl">🎨</span>
-              </div>
-              <h1 className="text-xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
-                Hôm nay nấu gì?
-              </h1>
+          <div className="flex items-center justify-center gap-3">
+            <div className="w-10 h-10 bg-gradient-to-br from-blue-400 to-indigo-500 rounded-xl flex items-center justify-center shadow-sm">
+              <span className="text-white text-xl">🎨</span>
             </div>
-
-            <div className="w-24"></div>
+            <h1 className="text-xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
+              Hôm nay nấu gì?
+            </h1>
           </div>
         </div>
       </header>

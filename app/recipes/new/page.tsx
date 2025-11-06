@@ -4,8 +4,6 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { RecipeService } from '@/libs/recipeService';
 import { Recipe } from '@/types/recipe';
-import DevModeButton from '@/components/DevModeButton';
-import { getRandomRecipe } from '@/data/mockFormData';
 
 export default function NewRecipePage() {
   const router = useRouter();
@@ -21,21 +19,6 @@ export default function NewRecipePage() {
     description: '',
   });
   const [loading, setLoading] = useState(false);
-
-  // Dev mode: Auto fill form
-  const handleDevFillForm = () => {
-    const mockData = getRandomRecipe();
-    setFormData({
-      ...formData,
-      dishName: mockData.dishName,
-      recipeName: mockData.recipeName,
-      difficulty: mockData.difficulty,
-      cookingTime: mockData.cookingTime,
-      instructor: mockData.instructor,
-      description: mockData.description,
-      sameAsDish: false,
-    });
-  };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, type } = e.target;
@@ -318,9 +301,6 @@ export default function NewRecipePage() {
           </div>
         </div>
       </main>
-
-      {/* Dev Mode Button */}
-      <DevModeButton onFillForm={handleDevFillForm} />
     </div>
   );
 }

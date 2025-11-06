@@ -3,7 +3,6 @@
 import { useEffect, useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { PageContainer, PageHeader, LoadingSpinner, GradientButton } from '@/components/ui';
-import DevModeButton from '@/components/DevModeButton';
 import { RecipeService } from '@/libs/recipeService';
 import ImageUpload from '@/components/ImageUpload';
 import type { Recipe } from '@/types/recipe';
@@ -244,9 +243,6 @@ export default function GalleryPage() {
           </div>
         </div>
       </main>
-
-      {/* Dev Mode Button */}
-      <DevModeButton onFillForm={handleDevFillForm} />
     </PageContainer>
   );
 }

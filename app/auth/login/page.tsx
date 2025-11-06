@@ -4,8 +4,6 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
-import DevModeButton from '@/components/DevModeButton';
-import { mockFormData } from '@/data/mockFormData';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
@@ -14,12 +12,6 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const { login, loginWithGoogle } = useAuth();
   const router = useRouter();
-
-  // Dev mode: Auto fill form
-  const handleDevFillForm = () => {
-    setEmail(mockFormData.login.email);
-    setPassword(mockFormData.login.password);
-  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -194,9 +186,6 @@ export default function LoginPage() {
           </div>
         </div>
       </div>
-
-      {/* Dev Mode Button */}
-      <DevModeButton onFillForm={handleDevFillForm} />
     </div>
   );
 }
