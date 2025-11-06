@@ -13,7 +13,7 @@ interface CookingEntry {
   cookDate: string;
   mistakes: string;
   improvements: string;
-  imageCount: number;
+  images: string[];
   timestamp: string;
 }
 

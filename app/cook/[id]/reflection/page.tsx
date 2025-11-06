@@ -61,7 +61,7 @@ export default function ReflectionPage() {
           cookDate: new Date().toLocaleDateString('vi-VN'),
           mistakes,
           improvements,
-          imageCount: uploadedImages.length,
+          images: [], // TODO: Will add image upload in next phase
         });
       } catch (error) {
         console.error('Error saving diary entry to Firestore:', error);
@@ -75,7 +75,7 @@ export default function ReflectionPage() {
         cookDate: new Date().toLocaleDateString('vi-VN'),
         mistakes,
         improvements,
-        imageCount: uploadedImages.length,
+        images: [], // TODO: Will add image upload in next phase
         timestamp: new Date().toISOString(),
       };
       
