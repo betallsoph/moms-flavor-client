@@ -48,7 +48,8 @@ export const authService = {
   login: async (email: string, password: string): Promise<User> => {
     const userCredential = await signInWithEmailAndPassword(auth, email, password);
     await ensureUserDocument(userCredential.user);
-    return mapFirebaseUser(userCredential.user);
+    // Load user data from Firestore to get latest name
+    return authService.getUserData(userCredential.user.uid);
   },
 
   // Register với email, password và name
@@ -63,7 +64,8 @@ export const authService = {
     // Ensure user document exists in Firestore
     await ensureUserDocument(userCredential.user);
     
-    return mapFirebaseUser(userCredential.user);
+    // Load user data from Firestore
+    return authService.getUserData(userCredential.user.uid);
   },
 
   // Login với Google
@@ -71,7 +73,8 @@ export const authService = {
     const provider = new GoogleAuthProvider();
     const userCredential = await signInWithPopup(auth, provider);
     await ensureUserDocument(userCredential.user);
-    return mapFirebaseUser(userCredential.user);
+    // Load user data from Firestore
+    return authService.getUserData(userCredential.user.uid);
   },
 
   // Đăng xuất

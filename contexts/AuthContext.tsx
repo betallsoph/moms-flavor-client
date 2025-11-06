@@ -21,8 +21,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     // Lắng nghe Firebase auth state changes
-    const unsubscribe = authService.onAuthStateChanged((user) => {
-      setUser(user);
+    const unsubscribe = authService.onAuthStateChanged(async (userData) => {
+      // userData is already loaded from Firestore in onAuthStateChanged
+      setUser(userData);
       setLoading(false);
     });
 
