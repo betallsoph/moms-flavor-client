@@ -86,28 +86,21 @@ export default function SelectToCookPage() {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {recipes.map((recipe) => (
-              <button
+              <div
                 key={recipe.id}
-                onClick={() => router.push(`/cook/${recipe.id}/ingredients`)}
-                className="bg-white rounded-xl shadow-md hover:shadow-lg border border-orange-100 hover:border-orange-300 overflow-hidden transition-all group text-left"
+                className="bg-white rounded-xl shadow-md hover:shadow-lg border border-orange-100 overflow-hidden transition-all"
               >
                 {/* Card Header */}
-                <div className="bg-gradient-to-r from-orange-100 to-amber-100 px-6 py-4 border-b border-orange-200 min-h-[120px]">
+                <div className="bg-gradient-to-r from-orange-100 to-amber-100 px-6 py-4 border-b border-orange-200">
                   <h3 className="text-lg font-bold text-gray-900 mb-3 line-clamp-1">
                     {recipe.dishName || recipe.recipeName}
                   </h3>
-                  {recipe.instructor && (
-                    <div className="overflow-hidden">
-                      <span className="bg-orange-200 text-orange-800 px-3 py-1 rounded-full text-xs font-medium inline-block max-w-full truncate">
+                  <div className="flex flex-wrap gap-2 text-xs">
+                    {recipe.instructor && (
+                      <span className="bg-orange-200 text-orange-800 px-3 py-1 rounded-full font-medium">
                         👤 {recipe.instructor}
                       </span>
-                    </div>
-                  )}
-                </div>
-
-                {/* Card Body */}
-                <div className="px-6 py-4 space-y-3">
-                  <div className="flex flex-wrap gap-2 text-xs">
+                    )}
                     <span className="bg-orange-200 text-orange-800 px-2 py-1 rounded-full">
                       {getDifficultyText(recipe.difficulty)}
                     </span>
@@ -115,13 +108,25 @@ export default function SelectToCookPage() {
                       {getCookingTimeText(recipe.cookingTime)}
                     </span>
                   </div>
+                </div>
+
+                {/* Card Body */}
+                <div className="px-6 py-4 space-y-3">
                   {recipe.description && (
                     <p className="text-sm text-gray-700 line-clamp-2">
                       {recipe.description}
                     </p>
                   )}
+                  
+                  {/* Cook Now Button */}
+                  <button
+                    onClick={() => router.push(`/cook/${recipe.id}/ingredients`)}
+                    className="w-full bg-gradient-to-r from-orange-600 to-amber-600 text-white font-semibold py-2.5 px-4 rounded-lg hover:shadow-lg transition-all"
+                  >
+                    🔥 Nấu ngay
+                  </button>
                 </div>
-              </button>
+              </div>
             ))}
           </div>
         )}
