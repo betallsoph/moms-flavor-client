@@ -5,27 +5,8 @@ import { useRouter, useParams } from 'next/navigation';
 import { PageContainer, PageHeader, LoadingSpinner, GradientButton } from '@/components/ui';
 import DevModeButton from '@/components/DevModeButton';
 import { RecipeService } from '@/libs/recipeService';
-
-interface Recipe {
-  id: string;
-  dishName?: string;
-  recipeName?: string;
-  sameAsdish?: boolean;
-  difficulty?: string;
-  cookingTime?: string;
-  estimateTime?: boolean;
-  estimatedTime?: string;
-  instructor?: string;
-  description?: string;
-  ingredientsList?: Array<{ name: string; quantity: string; unit: string }>;
-  favoriteBrands?: string[];
-  specialNotes?: string;
-  instructions?: string;
-  tips?: string;
-  coverImage?: string;
-  galleryImages?: string[];
-  createdAt: string;
-}
+import ImageUpload from '@/components/ImageUpload';
+import type { Recipe } from '@/types/recipe';
 
 export default function GalleryPage() {
   const router = useRouter();
@@ -35,6 +16,10 @@ export default function GalleryPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [tips, setTips] = useState('');
+  
+  // Image states
+  const [coverImage, setCoverImage] = useState<string>('');
+  const [galleryImages, setGalleryImages] = useState<string[]>([]);
 
   // Dev mode: Auto fill form (gallery page có tips field)
   const handleDevFillForm = () => {
@@ -48,6 +33,8 @@ export default function GalleryPage() {
       if (found) {
         setRecipe(found);
         setTips(found.tips || '');
+        setCoverImage(found.coverImage || '');
+        setGalleryImages(found.galleryImages || []);
       }
       setLoading(false);
     };
@@ -59,10 +46,12 @@ export default function GalleryPage() {
     setSaving(true);
     await new Promise(resolve => setTimeout(resolve, 800));
 
-    // Update recipe with tips using RecipeService
+    // Update recipe with tips and images using RecipeService
     try {
       await RecipeService.update(recipeId, {
         tips: tips,
+        coverImage: coverImage,
+        galleryImages: galleryImages,
       });
     } catch (error) {
       console.error('Error updating recipe:', error);
@@ -72,6 +61,24 @@ export default function GalleryPage() {
 
     setSaving(false);
     router.push(`/recipes/${recipeId}`);
+  };
+  
+  // Handle cover image upload
+  const handleCoverImageUpload = (imageUrl: string) => {
+    console.log('✅ Cover image uploaded:', imageUrl);
+    setCoverImage(imageUrl);
+  };
+  
+  // Handle gallery image upload
+  const handleGalleryImageUpload = (imageUrl: string) => {
+    console.log('✅ Gallery image uploaded:', imageUrl);
+    setGalleryImages([...galleryImages, imageUrl]);
+  };
+  
+  // Remove gallery image
+  const handleRemoveGalleryImage = (index: number) => {
+    const newGalleryImages = galleryImages.filter((_, i) => i !== index);
+    setGalleryImages(newGalleryImages);
   };
 
   if (loading) {
@@ -142,36 +149,77 @@ export default function GalleryPage() {
               <p className="text-sm text-gray-600 mb-4">
                 Ảnh chính đại diện cho món ăn của bạn. Hình ảnh này sẽ hiển thị ở danh sách công thức.
               </p>
-              <div className="border-2 border-dashed border-orange-300 rounded-lg p-8 text-center bg-orange-50">
-                <div className="text-5xl mb-3">📷</div>
-                <p className="text-sm text-gray-600 font-medium mb-1">Chưa có ảnh bìa</p>
-                <p className="text-xs text-gray-500 mb-4">Kéo thả hình ảnh vào đây hoặc nhấn để chọn</p>
-                <button
-                  type="button"
-                  className="px-6 py-2 bg-orange-600 text-white font-semibold rounded-lg hover:bg-orange-700 transition-colors text-sm disabled:opacity-50"
-                  disabled
-                >
-                  Thêm ảnh bìa (sắp có)
-                </button>
-              </div>
+              
+              {coverImage ? (
+                <div className="relative">
+                  <img
+                    src={coverImage}
+                    alt="Cover"
+                    className="w-full h-64 object-cover rounded-lg border-2 border-orange-200"
+                  />
+                  <button
+                    onClick={() => setCoverImage('')}
+                    className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-2 hover:bg-red-600 transition-colors shadow-lg"
+                  >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
+              ) : (
+                <ImageUpload
+                  folder="recipes"
+                  onUploadComplete={handleCoverImageUpload}
+                  maxSizeMB={5}
+                  label="Chọn ảnh bìa"
+                />
+              )}
             </div>
 
             {/* Gallery Images Section */}
             <div>
               <h3 className="text-lg font-bold text-gray-900 mb-4">
-                🎬 Ảnh bổ sung
+                🎬 Ảnh bổ sung ({galleryImages.length})
               </h3>
               <p className="text-sm text-gray-600 mb-4">
                 Thêm nhiều hình ảnh chi tiết: từng bước nấu, nguyên liệu, kết quả cuối cùng, hoặc cách bày trí món ăn.
               </p>
-              <div className="space-y-3">
-                {/* Placeholder gallery items */}
-                <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center bg-gray-50 hover:bg-gray-100 transition-colors cursor-pointer">
-                  <div className="text-4xl mb-2">➕</div>
-                  <p className="text-sm text-gray-600 font-medium">Thêm ảnh bổ sung</p>
-                  <p className="text-xs text-gray-500 mt-1">Kéo thả hoặc nhấn để chọn hình ảnh</p>
+              
+              <div className="space-y-4">
+                {/* Existing gallery images */}
+                {galleryImages.length > 0 && (
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                    {galleryImages.map((imageUrl, index) => (
+                      <div key={index} className="relative group">
+                        <img
+                          src={imageUrl}
+                          alt={`Gallery ${index + 1}`}
+                          className="w-full h-48 object-cover rounded-lg border-2 border-gray-200"
+                        />
+                        <button
+                          onClick={() => handleRemoveGalleryImage(index)}
+                          className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-2 hover:bg-red-600 transition-colors opacity-0 group-hover:opacity-100"
+                        >
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                          </svg>
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                
+                {/* Upload new image */}
+                <div>
+                  <ImageUpload
+                    folder="recipes"
+                    onUploadComplete={handleGalleryImageUpload}
+                    maxSizeMB={5}
+                    label="Thêm ảnh bổ sung"
+                  />
                 </div>
               </div>
+              
               <p className="text-xs text-gray-500 mt-3">
                 💡 Gợi ý: Thêm 3-5 ảnh để giới thiệu công thức của bạn một cách chi tiết và sinh động
               </p>

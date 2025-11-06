@@ -37,7 +37,7 @@ export interface CookingDiaryEntry {
   cookDate: string;
   mistakes: string;
   improvements: string;
-  imageCount: number;
+  images: string[]; // Array of image URLs from Naver Storage
   timestamp: string;
 }
 
@@ -239,6 +239,24 @@ export async function getDiaryEntry(userId: string, entryId: string): Promise<Co
   }
   
   return snapshot.data() as CookingDiaryEntry;
+}
+
+/**
+ * Get all cooking diary entries for a specific recipe (timeline)
+ */
+export async function getRecipeDiaryEntries(userId: string, recipeId: string): Promise<CookingDiaryEntry[]> {
+  const entriesRef = collection(db, 'users', userId, 'cookingDiary');
+  const q = query(
+    entriesRef, 
+    where('recipeId', '==', recipeId)
+    // Temporarily removed orderBy to avoid index requirement
+    // Will add back after creating index
+  );
+  const snapshot = await getDocs(q);
+  
+  // Sort in memory instead
+  const entries = snapshot.docs.map(doc => doc.data() as CookingDiaryEntry);
+  return entries.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
 }
 
 /**

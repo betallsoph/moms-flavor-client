@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, Suspense } from 'react';
 import { useRouter, useParams, useSearchParams } from 'next/navigation';
 import { PageContainer, PageHeader, LoadingSpinner, GradientButton } from '@/components/ui';
 import { RecipeService } from '@/libs/recipeService';
@@ -18,7 +18,7 @@ interface Instruction {
   note?: string;
 }
 
-export default function StepPage() {
+function StepPageContent() {
   const router = useRouter();
   const params = useParams();
   const searchParams = useSearchParams();
@@ -748,5 +748,13 @@ export default function StepPage() {
     </div>
   </div>
     </PageContainer>
+  );
+}
+
+export default function StepPage() {
+  return (
+    <Suspense fallback={<LoadingSpinner />}>
+      <StepPageContent />
+    </Suspense>
   );
 }

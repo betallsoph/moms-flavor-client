@@ -21,21 +21,31 @@ export default function CookingDiaryPage() {
   const router = useRouter();
   const [entries, setEntries] = useState<CookingEntry[]>([]);
   const [loading, setLoading] = useState(true);
+  const [userId, setUserId] = useState<string | null>(null);
+
+  // Wait for auth state to be ready
+  useEffect(() => {
+    const unsubscribe = auth.onAuthStateChanged((user) => {
+      setUserId(user?.uid || null);
+    });
+    return () => unsubscribe();
+  }, []);
 
   const loadEntries = async () => {
-    const userId = auth.currentUser?.uid;
-    
     if (userId) {
       // Load from Firestore
       try {
+        console.log('🔥 Loading diary entries from Firestore for user:', userId);
         const firestoreEntries = await firestoreService.getUserDiaryEntries(userId);
+        console.log('✅ Loaded', firestoreEntries.length, 'entries from Firestore');
         setEntries(firestoreEntries);
       } catch (error) {
-        console.error('Error loading diary entries from Firestore:', error);
+        console.error('❌ Error loading diary entries from Firestore:', error);
         setEntries([]);
       }
     } else {
       // Fallback to localStorage for non-authenticated users
+      console.log('📦 Loading from localStorage (no user logged in)');
       const diaryData = localStorage.getItem('cooking-diary') || '[]';
       const diary: CookingEntry[] = JSON.parse(diaryData);
       diary.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
@@ -46,8 +56,10 @@ export default function CookingDiaryPage() {
   };
 
   useEffect(() => {
-    loadEntries();
-  }, []);
+    if (userId !== null) {
+      loadEntries();
+    }
+  }, [userId]);
 
   // Reload entries when page regains focus
   useEffect(() => {
@@ -91,6 +103,27 @@ export default function CookingDiaryPage() {
     });
   };
 
+  // Group entries by recipeId
+  const groupedEntries = entries.reduce((acc, entry) => {
+    if (!acc[entry.recipeId]) {
+      acc[entry.recipeId] = [];
+    }
+    acc[entry.recipeId].push(entry);
+    return acc;
+  }, {} as Record<string, CookingEntry[]>);
+
+  // Convert to array and sort by latest timestamp
+  const recipeGroups = Object.entries(groupedEntries).map(([recipeId, entries]) => ({
+    recipeId,
+    dishName: entries[0].dishName,
+    count: entries.length,
+    latestEntry: entries[0], // Already sorted by timestamp desc
+    latestMistakes: entries[0].mistakes,
+    latestImprovements: entries[0].improvements,
+  })).sort((a, b) => 
+    new Date(b.latestEntry.timestamp).getTime() - new Date(a.latestEntry.timestamp).getTime()
+  );
+
   return (
     <PageContainer>
       <PageHeader
@@ -106,7 +139,7 @@ export default function CookingDiaryPage() {
       <main className="max-w-6xl mx-auto px-6 py-12">
         {loading ? (
           <LoadingSpinner message="Đang tải nhật ký..." />
-        ) : entries.length === 0 ? (
+        ) : recipeGroups.length === 0 ? (
           <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-12 text-center">
             <div className="max-w-md mx-auto">
               <div className="w-24 h-24 bg-gradient-to-br from-purple-100 to-pink-100 rounded-full flex items-center justify-center mx-auto mb-6">
@@ -125,48 +158,43 @@ export default function CookingDiaryPage() {
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {entries.map((entry) => (
+            {recipeGroups.map((group) => (
               <div
-                key={entry.id}
+                key={group.recipeId}
                 className="bg-white rounded-xl shadow-md hover:shadow-lg border border-purple-100 hover:border-purple-300 overflow-hidden transition-all group cursor-default"
               >
                 {/* Card Header */}
                 <div className="bg-gradient-to-r from-purple-100 to-pink-100 px-6 py-4 border-b border-purple-200">
                   <h3 className="text-lg font-bold text-gray-900 mb-2 line-clamp-1">
-                    {entry.dishName}
+                    {group.dishName}
                   </h3>
                   <div className="text-sm text-gray-600">
-                    📅 {formatDate(entry.timestamp)}
+                    📅 {formatDate(group.latestEntry.timestamp)}
+                  </div>
+                  <div className="text-sm font-semibold text-purple-600 mt-2">
+                    🍳 Đã nấu {group.count} lần
                   </div>
                 </div>
 
-                {/* Card Body */}
+                {/* Card Body - Latest Entry Preview */}
                 <div className="px-6 py-4 space-y-3">
                   {/* Mistakes */}
-                  {entry.mistakes && (
+                  {group.latestMistakes && (
                     <div>
-                      <h4 className="text-sm font-semibold text-gray-700 mb-1">⚠️ Sai sót:</h4>
+                      <h4 className="text-sm font-semibold text-gray-700 mb-1">⚠️ Lần gần nhất:</h4>
                       <p className="text-sm text-gray-600 line-clamp-2">
-                        {entry.mistakes}
+                        {group.latestMistakes}
                       </p>
                     </div>
                   )}
 
                   {/* Improvements */}
-                  {entry.improvements && (
+                  {group.latestImprovements && (
                     <div>
-                      <h4 className="text-sm font-semibold text-gray-700 mb-1">💡 Rút kinh nghiệm:</h4>
+                      <h4 className="text-sm font-semibold text-gray-700 mb-1">✨ Cải thiện:</h4>
                       <p className="text-sm text-gray-600 line-clamp-2">
-                        {entry.improvements}
+                        {group.latestImprovements}
                       </p>
-                    </div>
-                  )}
-
-                  {/* Image Count */}
-                  {entry.imageCount > 0 && (
-                    <div className="flex items-center gap-2 text-sm text-purple-600 bg-purple-50 px-3 py-2 rounded-lg">
-                      <span>📸</span>
-                      <span>{entry.imageCount} ảnh được lưu</span>
                     </div>
                   )}
                 </div>
@@ -174,16 +202,16 @@ export default function CookingDiaryPage() {
                 {/* Card Footer */}
                 <div className="px-6 py-4 border-t border-gray-100 flex gap-2">
                   <button
-                    onClick={() => router.push(`/cooking-diary/${entry.id}`)}
+                    onClick={() => router.push(`/cooking-diary/${group.recipeId}`)}
                     className="flex-1 bg-purple-600 text-white font-semibold py-2 rounded-lg hover:bg-purple-700 transition-colors text-sm"
                   >
-                    Xem chi tiết
+                    Xem lịch sử ({group.count})
                   </button>
                   <button
-                    onClick={() => handleDelete(entry.id)}
-                    className="flex-1 bg-red-100 text-red-600 font-semibold py-2 rounded-lg hover:bg-red-200 transition-colors text-sm"
+                    onClick={() => router.push(`/recipes/${group.recipeId}`)}
+                    className="bg-gray-100 text-gray-700 font-semibold py-2 px-4 rounded-lg hover:bg-gray-200 transition-colors text-sm"
                   >
-                    Xóa
+                    📖
                   </button>
                 </div>
               </div>
