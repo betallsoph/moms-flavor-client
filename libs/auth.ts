@@ -9,7 +9,8 @@ import {
   updateProfile,
   User as FirebaseUser
 } from 'firebase/auth';
-import { auth } from './firebase';
+import { doc, setDoc, getDoc } from 'firebase/firestore';
+import { auth, db } from './firebase';
 
 export interface User {
   id: string;
@@ -26,10 +27,27 @@ const mapFirebaseUser = (firebaseUser: FirebaseUser): User => {
   };
 };
 
+// Helper function to ensure user document exists in Firestore
+const ensureUserDocument = async (firebaseUser: FirebaseUser): Promise<void> => {
+  const userRef = doc(db, 'users', firebaseUser.uid);
+  const userDoc = await getDoc(userRef);
+  
+  if (!userDoc.exists()) {
+    // Create user document if it doesn't exist
+    await setDoc(userRef, {
+      id: firebaseUser.uid,
+      email: firebaseUser.email || '',
+      name: firebaseUser.displayName || firebaseUser.email?.split('@')[0] || 'User',
+      createdAt: new Date().toISOString(),
+    });
+  }
+};
+
 export const authService = {
   // Login với email và password
   login: async (email: string, password: string): Promise<User> => {
     const userCredential = await signInWithEmailAndPassword(auth, email, password);
+    await ensureUserDocument(userCredential.user);
     return mapFirebaseUser(userCredential.user);
   },
 
@@ -42,6 +60,9 @@ export const authService = {
       displayName: name,
     });
     
+    // Ensure user document exists in Firestore
+    await ensureUserDocument(userCredential.user);
+    
     return mapFirebaseUser(userCredential.user);
   },
 
@@ -49,6 +70,7 @@ export const authService = {
   loginWithGoogle: async (): Promise<User> => {
     const provider = new GoogleAuthProvider();
     const userCredential = await signInWithPopup(auth, provider);
+    await ensureUserDocument(userCredential.user);
     return mapFirebaseUser(userCredential.user);
   },
 
@@ -58,9 +80,40 @@ export const authService = {
   },
 
   // Lấy thông tin user hiện tại
-  getCurrentUser: (): User | null => {
+  getCurrentUser: async (): Promise<User | null> => {
     const firebaseUser = auth.currentUser;
-    return firebaseUser ? mapFirebaseUser(firebaseUser) : null;
+    if (!firebaseUser) return null;
+    
+    return authService.getUserData(firebaseUser.uid);
+  },
+
+  // Lấy user data từ Firestore
+  getUserData: async (userId: string): Promise<User> => {
+    const userRef = doc(db, 'users', userId);
+    const userDoc = await getDoc(userRef);
+    
+    const firebaseUser = auth.currentUser;
+    
+    if (userDoc.exists()) {
+      const userData = userDoc.data();
+      return {
+        id: userId,
+        email: userData.email || firebaseUser?.email || '',
+        name: userData.name || firebaseUser?.displayName || 'User',
+      };
+    }
+    
+    // Fallback to Firebase Auth data if Firestore doc doesn't exist
+    if (firebaseUser) {
+      return mapFirebaseUser(firebaseUser);
+    }
+    
+    // Last resort fallback
+    return {
+      id: userId,
+      email: '',
+      name: 'User',
+    };
   },
 
   // Kiểm tra đã đăng nhập chưa
@@ -69,9 +122,14 @@ export const authService = {
   },
 
   // Lắng nghe auth state changes
-  onAuthStateChanged: (callback: (user: User | null) => void) => {
-    return firebaseOnAuthStateChanged(auth, (firebaseUser) => {
-      callback(firebaseUser ? mapFirebaseUser(firebaseUser) : null);
+  onAuthStateChanged: (callback: (user: User | null) => void | Promise<void>) => {
+    return firebaseOnAuthStateChanged(auth, async (firebaseUser) => {
+      if (firebaseUser) {
+        const userData = await authService.getUserData(firebaseUser.uid);
+        callback(userData);
+      } else {
+        callback(null);
+      }
     });
   },
 };
