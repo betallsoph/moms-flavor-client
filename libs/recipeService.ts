@@ -1,5 +1,4 @@
 import { Recipe } from '@/types/recipe';
-import { mockRecipes } from '@/data/mockRecipes';
 import { auth } from './firebase';
 import * as firestoreService from './firestore';
 
@@ -14,26 +13,6 @@ export class RecipeService {
    */
   private static getUserId(): string | null {
     return auth.currentUser?.uid || null;
-  }
-
-  /**
-   * Initialize localStorage with mock data if empty (fallback for non-authenticated users)
-   */
-  static initialize(): void {
-    if (typeof window === 'undefined') return;
-    
-    const existing = localStorage.getItem(STORAGE_KEY);
-    if (!existing || JSON.parse(existing).length === 0) {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(mockRecipes));
-    }
-  }
-
-  /**
-   * Reset to mock data (for development)
-   */
-  static resetToMockData(): void {
-    if (typeof window === 'undefined') return;
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(mockRecipes));
   }
 
   /**
@@ -182,9 +161,4 @@ export class RecipeService {
       r.instructor?.toLowerCase().includes(lowercaseQuery)
     );
   }
-}
-
-// Initialize on import
-if (typeof window !== 'undefined') {
-  RecipeService.initialize();
 }

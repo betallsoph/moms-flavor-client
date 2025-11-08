@@ -5,8 +5,6 @@ import { useRouter, useParams } from 'next/navigation';
 import { PageContainer, PageHeader } from '@/components/ui';
 import { RecipeService } from '@/libs/recipeService';
 import type { Recipe } from '@/types/recipe';
-import DevModeButton from '@/components/DevModeButton';
-import { mockFormData } from '@/data/mockFormData';
 import { auth } from '@/libs/firebase';
 import * as firestoreService from '@/libs/firestore';
 
@@ -30,12 +28,6 @@ export default function ReflectionPage() {
   const [improvements, setImprovements] = useState('');
   const [uploadedImages, setUploadedImages] = useState<File[]>([]);
   const [recipeName, setRecipeName] = useState('');
-
-  // Dev mode: Auto fill form
-  const handleDevFillForm = () => {
-    setMistakes(mockFormData.reflection.mistakes);
-    setImprovements(mockFormData.reflection.improvements);
-  };
 
   useEffect(() => {
     // Load recipe name
@@ -190,9 +182,6 @@ export default function ReflectionPage() {
           </div>
         </div>
       </main>
-
-      {/* Dev Mode Button */}
-      <DevModeButton onFillForm={handleDevFillForm} />
     </PageContainer>
   );
 }

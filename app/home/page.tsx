@@ -35,10 +35,13 @@ export default function HomePage() {
         title="Trang chủ"
         rightContent={
           <div className="flex items-center gap-4">
-            <div className="text-right">
+            <button
+              onClick={() => router.push('/profile')}
+              className="text-right hover:bg-gray-50 px-3 py-2 rounded-lg transition-colors"
+            >
               <p className="text-sm font-medium text-gray-900">{user.name}</p>
               <p className="text-xs text-gray-500">{user.email}</p>
-            </div>
+            </button>
             <button
               onClick={handleLogout}
               className="px-4 py-2 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"

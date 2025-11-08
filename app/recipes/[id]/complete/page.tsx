@@ -3,7 +3,6 @@
 import { useEffect, useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { PageContainer, PageHeader, LoadingSpinner, GradientButton } from '@/components/ui';
-import DevModeButton from '@/components/DevModeButton';
 import { RecipeService } from '@/libs/recipeService';
 
 interface Ingredient {
@@ -46,14 +45,6 @@ export default function CompleteRecipePage() {
   const [brandsInput, setBrandsInput] = useState('');
   const [hasSpecialNotes, setHasSpecialNotes] = useState(false);
   const [specialNotes, setSpecialNotes] = useState('');
-
-  // Dev mode: Auto fill form
-  const handleDevFillForm = () => {
-    setHasSpecialNotes(true);
-    setSpecialNotes('Nên chọn thịt ba chỉ tươi, không đóng băng. Nếu muốn mềm hơn có thể luộc qua nước sôi trước khi nướng.');
-    setHasBrands(true);
-    setBrandsInput('Tương ớt Cholimex, Nước mắm Nam Ngư');
-  };
 
   useEffect(() => {
     // Load recipe from RecipeService (Firestore with localStorage fallback)
@@ -315,9 +306,6 @@ export default function CompleteRecipePage() {
           </div>
         </div>
       </main>
-
-      {/* Dev Mode Button */}
-      <DevModeButton onFillForm={handleDevFillForm} />
     </PageContainer>
   );
 }

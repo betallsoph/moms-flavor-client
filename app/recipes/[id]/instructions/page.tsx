@@ -3,7 +3,6 @@
 import { useEffect, useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { PageContainer, PageHeader, LoadingSpinner, GradientButton } from '@/components/ui';
-import DevModeButton from '@/components/DevModeButton';
 import { RecipeService } from '@/libs/recipeService';
 
 interface Instruction {
@@ -45,43 +44,6 @@ export default function InstructionsPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [instructions, setInstructions] = useState<Instruction[]>([]);
-
-  // Dev mode: Auto fill form
-  const handleDevFillForm = () => {
-    setInstructions([
-      {
-        id: '1',
-        step: 1,
-        title: 'Sơ chế nguyên liệu',
-        hasDescription: true,
-        description: 'Rửa sạch thịt, thái miếng vừa ăn. Rau củ rửa sạch, để ráo.',
-        needsTime: true,
-        duration: '10 phút',
-        hasNote: false,
-      },
-      {
-        id: '2',
-        step: 2,
-        title: 'Ướp gia vị',
-        hasDescription: true,
-        description: 'Ướp thịt với nước mắm, tiêu, tỏi băm. Để ít nhất 30 phút cho thịt thấm gia vị.',
-        needsTime: true,
-        duration: '30 phút',
-        hasNote: true,
-        note: 'Có thể ướp qua đêm để thịt thấm đều hơn',
-      },
-      {
-        id: '3',
-        step: 3,
-        title: 'Nấu chín',
-        hasDescription: true,
-        description: 'Cho dầu vào chảo, đợi nóng rồi cho thịt vào xào săn. Nêm nếm gia vị cho vừa khẩu vị.',
-        needsTime: true,
-        duration: '15 phút',
-        hasNote: false,
-      },
-    ]);
-  };
 
   useEffect(() => {
     // Load recipe from RecipeService (Firestore with localStorage fallback)
@@ -366,9 +328,6 @@ export default function InstructionsPage() {
           </form>
         </div>
       </main>
-
-      {/* Dev Mode Button */}
-      <DevModeButton onFillForm={handleDevFillForm} />
     </PageContainer>
   );
 }

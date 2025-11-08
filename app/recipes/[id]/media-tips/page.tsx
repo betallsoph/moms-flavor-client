@@ -3,7 +3,6 @@
 import { useEffect, useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { PageContainer, PageHeader, LoadingSpinner, GradientButton } from '@/components/ui';
-import DevModeButton from '@/components/DevModeButton';
 import { RecipeService } from '@/libs/recipeService';
 
 interface Recipe {
@@ -33,11 +32,6 @@ export default function MediaTipsPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [tips, setTips] = useState('');
-
-  // Dev mode: Auto fill form
-  const handleDevFillForm = () => {
-    setTips('Mẹo hay: Nên mua thịt tươi vào buổi sáng sớm để chọn được miếng đẹp. Khi nướng, hãy để lửa vừa để thịt chín đều và không bị khô. Nếu thích vị cay, có thể thêm ớt tươi băm vào nước chấm.');
-  };
 
   useEffect(() => {
     // Load recipe from RecipeService (Firestore with localStorage fallback)
@@ -164,9 +158,6 @@ export default function MediaTipsPage() {
           </form>
         </div>
       </main>
-
-      {/* Dev Mode Button */}
-      <DevModeButton onFillForm={handleDevFillForm} />
     </PageContainer>
   );
 }

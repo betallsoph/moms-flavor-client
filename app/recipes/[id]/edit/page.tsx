@@ -3,8 +3,6 @@
 import { useEffect, useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { PageContainer, PageHeader, LoadingSpinner, GradientButton } from '@/components/ui';
-import DevModeButton from '@/components/DevModeButton';
-import { getRandomRecipe } from '@/data/mockFormData';
 import { RecipeService } from '@/libs/recipeService';
 import type { Recipe } from '@/types/recipe';
 
@@ -15,21 +13,6 @@ export default function EditRecipePage() {
   const [formData, setFormData] = useState<Recipe | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-
-  // Dev mode: Auto fill form
-  const handleDevFillForm = () => {
-    if (!formData) return;
-    const mockData = getRandomRecipe();
-    setFormData({
-      ...formData,
-      dishName: mockData.dishName,
-      recipeName: mockData.recipeName,
-      difficulty: mockData.difficulty as any,
-      cookingTime: mockData.cookingTime as any,
-      instructor: mockData.instructor,
-      description: mockData.description,
-    });
-  };
 
   useEffect(() => {
     // Load recipe from RecipeService (Firestore with localStorage fallback)
@@ -293,9 +276,6 @@ export default function EditRecipePage() {
           </form>
         </div>
       </main>
-
-      {/* Dev Mode Button */}
-      <DevModeButton onFillForm={handleDevFillForm} />
     </PageContainer>
   );
 }
