@@ -202,3 +202,61 @@ export function formatFileSize(bytes: number): string {
   const i = Math.floor(Math.log(bytes) / Math.log(k));
   return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
 }
+
+/**
+ * Upload JSON data to Naver Object Storage
+ * 
+ * Được dùng để sync data cho AiTEMS recommendation system
+ * 
+ * @param data - JSON data object
+ * @param folder - Folder path (e.g., 'cook-history/items')
+ * @param filename - Filename (e.g., 'items-2024-11-10.json')
+ * @returns URL of uploaded JSON file
+ * 
+ * File structure for AiTEMS:
+ * cook-history/
+ *   ├── items/          # Recipe data
+ *   │   └── items-YYYY-MM-DD.json
+ *   ├── users/          # User preferences
+ *   │   └── users-YYYY-MM-DD.json
+ *   └── interactions/   # Cooking events
+ *       └── interactions-YYYY-MM-DD.json
+ */
+export async function uploadJSON(
+  data: any,
+  folder: string,
+  filename: string
+): Promise<string> {
+  try {
+    const filepath = `cook-history/${folder}/${filename}`;
+    
+    console.log('🔄 Uploading JSON to Naver:', filepath);
+    
+    // Convert JSON object to string buffer
+    const jsonString = JSON.stringify(data, null, 2);
+    const buffer = Buffer.from(jsonString, 'utf-8');
+    
+    // Prepare upload command
+    const uploadParams: PutObjectCommandInput = {
+      Bucket: process.env.NEXT_PUBLIC_NAVER_BUCKET || 'moms-flavor-images',
+      Key: filepath,
+      Body: buffer,
+      ContentType: 'application/json',
+      ACL: 'public-read', // AiTEMS cần đọc được
+    };
+    
+    const command = new PutObjectCommand(uploadParams);
+    await s3Client.send(command);
+    
+    // Generate public URL
+    const bucketUrl = `${process.env.NEXT_PUBLIC_NAVER_ENDPOINT}/${process.env.NEXT_PUBLIC_NAVER_BUCKET}`;
+    const jsonUrl = `${bucketUrl}/${filepath}`;
+    
+    console.log('✅ JSON upload success:', jsonUrl);
+    
+    return jsonUrl;
+  } catch (error: any) {
+    console.error('❌ JSON upload error:', error);
+    throw new Error(`Failed to upload JSON to Naver Object Storage: ${error.message || error}`);
+  }
+}

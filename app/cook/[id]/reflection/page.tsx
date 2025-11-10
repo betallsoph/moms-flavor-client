@@ -8,18 +8,7 @@ import type { Recipe } from '@/types/recipe';
 import { auth } from '@/libs/firebase';
 import * as firestoreService from '@/libs/firestore';
 import { uploadImage } from '@/libs/naverStorage';
-
-interface CookingEntry {
-  id: string;
-  recipeId: string;
-  dishName: string;
-  cookDate: string;
-  mistakes: string;
-  improvements: string;
-  images: string[];
-  timestamp: string;
-  rating?: number;
-}
+import { syncCookingEvent } from '@/libs/aitemsSync';
 
 export default function ReflectionPage() {
   const router = useRouter();
@@ -27,7 +16,6 @@ export default function ReflectionPage() {
   const recipeId = params.id as string;
   
   const [recipe, setRecipe] = useState<Recipe | null>(null);
-  const [previousEntries, setPreviousEntries] = useState<CookingEntry[]>([]);
   const [totalCooked, setTotalCooked] = useState(0);
   const [loading, setLoading] = useState(true);
   
@@ -38,6 +26,7 @@ export default function ReflectionPage() {
   const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
   const [uploading, setUploading] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
 
   useEffect(() => {
     const loadData = async () => {
@@ -49,25 +38,20 @@ export default function ReflectionPage() {
         setRecipe(foundRecipe);
       }
       
-      // Load previous entries
+      // Get total cooking count
       const userId = auth.currentUser?.uid;
       if (userId) {
         try {
-          const entries = await firestoreService.getRecipeDiaryEntries(userId, recipeId);
-          setPreviousEntries(entries);
-          
-          // Get total cooking count across all recipes
           const allEntries = await firestoreService.getUserDiaryEntries(userId);
           setTotalCooked(allEntries.length + 1); // +1 for current cooking
         } catch (error) {
-          console.error('Error loading previous entries:', error);
+          console.error('Error loading diary entries:', error);
         }
       } else {
         // Fallback to localStorage
         const diaryData = localStorage.getItem('cooking-diary') || '[]';
-        const diary: CookingEntry[] = JSON.parse(diaryData);
-        setPreviousEntries(diary.filter(e => e.recipeId === recipeId));
-        setTotalCooked(diary.length + 1);
+        const diary = JSON.parse(diaryData);
+        setTotalCooked(Array.isArray(diary) ? diary.length + 1 : 1);
       }
       
       setLoading(false);
@@ -111,7 +95,8 @@ export default function ReflectionPage() {
       localStorage.setItem('cooking-diary', JSON.stringify(diary));
     }
     
-    router.push(`/cook/${recipeId}/congratulations`);
+    // Show celebration instead of redirect
+    setSaved(true);
   };
 
   const handleSave = async () => {
@@ -140,7 +125,8 @@ export default function ReflectionPage() {
     // Save entry
     if (userId) {
       try {
-        await firestoreService.createDiaryEntry(userId, {
+        // Save to Firestore
+        const entryId = await firestoreService.createDiaryEntry(userId, {
           recipeId,
           dishName: recipe?.dishName || 'Món ăn',
           cookDate: new Date().toLocaleDateString('vi-VN'),
@@ -148,6 +134,29 @@ export default function ReflectionPage() {
           improvements: improvements,
           images: imageUrls,
         });
+        
+        // 🤖 Auto-sync to AiTEMS (background task)
+        // Lưu data vào Object Storage để AiTEMS có thể gợi ý món ăn
+        if (recipe) {
+          syncCookingEvent(
+            {
+              id: entryId,
+              userId,
+              recipeId,
+              dishName: recipe.dishName || 'Món ăn',
+              cookDate: new Date().toLocaleDateString('vi-VN'),
+              mistakes: notes,
+              improvements: improvements,
+              images: imageUrls,
+              timestamp: new Date().toISOString(),
+            },
+            recipe,
+            rating
+          ).catch(err => {
+            // Silent fail - AiTEMS sync không được thì cũng không sao
+            console.warn('⚠️ AiTEMS sync failed (non-critical):', err);
+          });
+        }
       } catch (error) {
         console.error('Error saving diary entry:', error);
         alert('Có lỗi khi lưu nhật ký. Vui lòng thử lại.');
@@ -174,11 +183,75 @@ export default function ReflectionPage() {
     }
     
     setSaving(false);
-    router.push(`/cook/${recipeId}/congratulations`);
+    setSaved(true); // Show celebration screen
   };
 
   if (loading) {
     return <LoadingSpinner />;
+  }
+
+  // If saved, show celebration
+  if (saved) {
+    return (
+      <PageContainer>
+        <main className="min-h-screen flex items-center justify-center px-6 py-12 bg-gradient-to-br from-yellow-50 via-orange-50 to-red-50">
+          <div className="text-center max-w-2xl">
+            {/* Celebration Animation */}
+            <div className="mb-8 animate-bounce">
+              <div className="text-9xl inline-block">🎉</div>
+            </div>
+
+            <h1 className="text-5xl font-bold text-gray-900 mb-4">
+              Tuyệt vời!
+            </h1>
+
+            <p className="text-2xl text-orange-600 font-semibold mb-12">
+              Bạn đã hoàn thành nấu {recipe?.dishName || recipe?.recipeName || 'món ăn'}
+            </p>
+
+            <div className="bg-gradient-to-r from-yellow-100 to-orange-100 border-2 border-yellow-300 rounded-xl p-8 mb-12">
+              <p className="text-lg text-gray-900 mb-4">
+                💪 <strong>Bạn vừa hoàn thành một hành trình nấu ăn tuyệt vời!</strong>
+              </p>
+              <p className="text-gray-700 mb-4">
+                Kinh nghiệm bạn ghi lại sẽ giúp bạn nấu tốt hơn lần sau.
+              </p>
+              <p className="text-gray-600 text-sm">
+                Chuẩn bị nấu một công thức khác? Hãy quay lại và chọn một công thức mới!
+              </p>
+            </div>
+
+            <div className="flex flex-col gap-3">
+              <button
+                onClick={() => {
+                  localStorage.removeItem('selectedRecipe');
+                  router.push(`/recipes/${recipeId}`);
+                }}
+                className="bg-gradient-to-r from-orange-600 to-amber-600 text-white font-bold py-4 px-8 rounded-xl hover:shadow-lg transition-shadow text-lg"
+              >
+                ← Quay lại chi tiết công thức
+              </button>
+              <button
+                onClick={() => router.push('/recipes')}
+                className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-bold py-4 px-8 rounded-xl hover:shadow-lg transition-shadow text-lg"
+              >
+                🏠 Quay lại danh sách công thức
+              </button>
+              <button
+                onClick={() => router.push('/home')}
+                className="bg-gray-200 text-gray-900 font-bold py-4 px-8 rounded-xl hover:bg-gray-300 transition-colors text-lg"
+              >
+                👋 Về trang chủ
+              </button>
+            </div>
+
+            <p className="text-sm text-gray-600 mt-8">
+              🌟 Hãy nấu thêm nữa để trở thành một đầu bếp giỏi!
+            </p>
+          </div>
+        </main>
+      </PageContainer>
+    );
   }
 
   return (
@@ -186,10 +259,6 @@ export default function ReflectionPage() {
       <PageHeader
         icon="📝"
         title="Ghi lại kinh nghiệm"
-        backButton={{
-          label: 'Quay lại',
-          onClick: () => router.push(`/recipes/${recipeId}`),
-        }}
       />
 
       <main className="max-w-4xl mx-auto px-6 py-12">
@@ -200,7 +269,7 @@ export default function ReflectionPage() {
             Tuyệt vời! Bạn đã hoàn thành món
           </h2>
           <p className="text-2xl font-bold text-orange-600 mb-4">
-            {recipe?.dishName || recipe?.recipeName}
+            {recipe?.dishName || recipe?.recipeName || 'Món ăn'}
           </p>
           <p className="text-gray-600 text-lg">
             Đây là món ăn thứ{' '}
@@ -224,38 +293,6 @@ export default function ReflectionPage() {
             </div>
           </div>
         </div>
-
-        {/* Previous Entries Context */}
-        {previousEntries.length > 0 && (
-          <div className="mb-8 bg-blue-50 border-l-4 border-blue-400 p-6 rounded-lg">
-            <p className="font-semibold text-blue-900 mb-3 flex items-center gap-2">
-              <span>📚</span>
-              <span>Bạn đã nấu món này {previousEntries.length} lần trước</span>
-            </p>
-            <details className="text-sm">
-              <summary className="cursor-pointer text-blue-700 hover:text-blue-900 font-medium">
-                💡 Xem ghi chú lần gần nhất
-              </summary>
-              <div className="mt-3 p-4 bg-white rounded-lg border border-blue-200">
-                <p className="text-gray-600 text-xs mb-1">
-                  {previousEntries[0].cookDate}
-                </p>
-                {previousEntries[0].improvements && (
-                  <div className="mb-2">
-                    <p className="font-semibold text-gray-700 text-sm">Cải thiện:</p>
-                    <p className="text-gray-700">{previousEntries[0].improvements}</p>
-                  </div>
-                )}
-                {previousEntries[0].mistakes && (
-                  <div>
-                    <p className="font-semibold text-gray-700 text-sm">Ghi chú:</p>
-                    <p className="text-gray-700">{previousEntries[0].mistakes}</p>
-                  </div>
-                )}
-              </div>
-            </details>
-          </div>
-        )}
 
         {/* Main Form */}
         <div className="bg-white rounded-2xl shadow-lg border border-orange-100 p-8">
@@ -351,21 +388,32 @@ export default function ReflectionPage() {
             </p>
           </div>
 
-          {/* Action Buttons */}
-          <div className="mt-8 flex gap-4">
+          {/* Action Button */}
+          <div className="mt-8">
             <button
-              onClick={handleSkip}
+              onClick={() => {
+                // Smart button: check if user has data
+                const hasData = notes.trim() || improvements.trim() || uploadedFiles.length > 0 || rating > 0;
+                if (hasData) {
+                  handleSave();
+                } else {
+                  handleSkip();
+                }
+              }}
               disabled={saving || uploading}
-              className="flex-1 bg-gray-200 text-gray-700 font-semibold py-3 px-6 rounded-lg hover:bg-gray-300 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className={`w-full font-semibold py-4 px-6 rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed text-lg ${
+                (() => {
+                  const hasData = notes.trim() || improvements.trim() || uploadedFiles.length > 0 || rating > 0;
+                  return hasData 
+                    ? 'bg-gradient-to-r from-orange-600 to-amber-600 text-white hover:shadow-lg' 
+                    : 'bg-gray-300 text-gray-700 hover:bg-gray-400';
+                })()
+              }`}
             >
-              ⏭️ Bỏ qua, ghi sau
-            </button>
-            <button
-              onClick={handleSave}
-              disabled={saving || uploading}
-              className="flex-1 bg-gradient-to-r from-orange-600 to-amber-600 text-white font-semibold py-3 px-6 rounded-lg hover:shadow-lg transition-shadow disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {uploading ? '📤 Đang upload ảnh...' : saving ? '💾 Đang lưu...' : '✓ Lưu và tiếp tục'}
+              {uploading ? '📤 Đang upload ảnh...' : saving ? '💾 Đang lưu...' : (() => {
+                const hasData = notes.trim() || improvements.trim() || uploadedFiles.length > 0 || rating > 0;
+                return hasData ? '✓ Lưu và tiếp tục' : '⏭️ Bỏ qua';
+              })()}
             </button>
           </div>
         </div>

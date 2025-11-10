@@ -285,12 +285,6 @@ function StepPageContent() {
             {/* Actions */}
             <div className="flex items-center gap-3">
               <button 
-                onClick={() => router.push(`/recipes/${recipeId}`)}
-                className="text-sm px-3 py-1.5 bg-gray-100 text-gray-700 rounded-full hover:bg-gray-200 transition-colors font-medium"
-              >
-                ℹ️ Xem recipe
-              </button>
-              <button 
                 onClick={() => {
                   if (confirm('Bạn có muốn thoát chế độ nấu? Tiến độ của bạn đã được lưu.')) {
                     router.push(`/recipes/${recipeId}`);

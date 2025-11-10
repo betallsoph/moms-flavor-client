@@ -84,17 +84,17 @@ export default function CookingDiaryEntryPage() {
           title="Không tìm thấy"
           backButton={{
             label: 'Quay lại',
-            onClick: () => router.push('/memories'),
+            onClick: () => router.push('/cooking-diary'),
           }}
         />
         <main className="max-w-4xl mx-auto px-6 py-12">
           <div className="bg-white rounded-2xl shadow-lg border border-gray-200 p-12 text-center">
             <p className="text-gray-600 text-lg">Không tìm thấy nhật ký này.</p>
             <button
-              onClick={() => router.push('/memories')}
+              onClick={() => router.push('/cooking-diary')}
               className="mt-6 bg-purple-600 text-white font-semibold py-2 px-6 rounded-lg hover:bg-purple-700 transition-colors"
             >
-              Quay lại góc kỷ niệm
+              Quay lại nhật ký
             </button>
           </div>
         </main>
@@ -109,7 +109,7 @@ export default function CookingDiaryEntryPage() {
         title="Chi tiết nhật ký"
         backButton={{
           label: 'Quay lại',
-          onClick: () => router.push('/memories'),
+          onClick: () => router.push('/cooking-diary'),
         }}
       />
 
@@ -181,10 +181,10 @@ export default function CookingDiaryEntryPage() {
             {/* Action Buttons */}
             <div className="flex gap-4 pt-4">
               <button
-                onClick={() => router.push('/memories')}
+                onClick={() => router.push('/cooking-diary')}
                 className="flex-1 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-semibold py-3 px-6 rounded-lg hover:shadow-lg transition-shadow"
               >
-                Quay lại góc kỷ niệm
+                Quay lại nhật ký
               </button>
               <button
                 onClick={() => router.push(`/recipes/${entry.recipeId}`)}
