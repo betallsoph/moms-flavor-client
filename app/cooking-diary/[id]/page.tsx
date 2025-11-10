@@ -168,34 +168,30 @@ export default function CookingDiaryDetailPage() {
               )}
 
               {/* Mistakes */}
-              {entry.mistakes && (
-                <div className="mb-6">
-                  <h3 className="text-lg font-bold text-gray-900 mb-3 flex items-center gap-2">
-                    <span>⚠️</span>
-                    <span>Sai sót</span>
-                  </h3>
-                  <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-                    <p className="text-gray-700 leading-relaxed whitespace-pre-wrap">
-                      {entry.mistakes}
-                    </p>
-                  </div>
+              <div className="mb-6">
+                <h3 className="text-lg font-bold text-gray-900 mb-3 flex items-center gap-2">
+                  <span>⚠️</span>
+                  <span>Sai sót</span>
+                </h3>
+                <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+                  <p className="text-gray-700 leading-relaxed whitespace-pre-wrap">
+                    {entry.mistakes || 'Không có ghi chú sai sót'}
+                  </p>
                 </div>
-              )}
+              </div>
 
               {/* Improvements */}
-              {entry.improvements && (
-                <div>
-                  <h3 className="text-lg font-bold text-gray-900 mb-3 flex items-center gap-2">
-                    <span>✨</span>
-                    <span>Cải thiện</span>
-                  </h3>
-                  <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-                    <p className="text-gray-700 leading-relaxed whitespace-pre-wrap">
-                      {entry.improvements}
-                    </p>
-                  </div>
+              <div>
+                <h3 className="text-lg font-bold text-gray-900 mb-3 flex items-center gap-2">
+                  <span>✨</span>
+                  <span>Cải thiện</span>
+                </h3>
+                <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                  <p className="text-gray-700 leading-relaxed whitespace-pre-wrap">
+                    {entry.improvements || 'Không có ghi chú cải thiện'}
+                  </p>
                 </div>
-              )}
+              </div>
             </div>
           ))}
         </div>

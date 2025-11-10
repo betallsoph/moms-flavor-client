@@ -5,6 +5,7 @@ import { useRouter, useParams, useSearchParams } from 'next/navigation';
 import { PageContainer, PageHeader, LoadingSpinner, GradientButton } from '@/components/ui';
 import { RecipeService } from '@/libs/recipeService';
 import type { Recipe } from '@/types/recipe';
+import CompletedBadge from '@/components/CompletedBadge';
 
 interface Instruction {
   id: string;
@@ -260,14 +261,67 @@ function StepPageContent() {
 
   return (
     <PageContainer>
-      <PageHeader
-        icon="👨‍🍳"
-        title={`Bước ${stepNumber}/${instructions.length}`}
-        backButton={{
-          label: 'Quay lại',
-          onClick: () => router.push(`/recipes/${recipeId}`),
-        }}
-      />
+      {/* Sticky Context Bar */}
+      <div className="sticky top-0 z-50 bg-white border-b-2 border-orange-200 shadow-md">
+        <div className="max-w-7xl mx-auto px-6 py-4">
+          {/* Top Row - Breadcrumb & Actions */}
+          <div className="flex items-center justify-between mb-3">
+            <nav className="flex items-center gap-2 text-sm">
+              <button 
+                onClick={() => router.push('/home')}
+                className="text-gray-600 hover:text-orange-600 transition-colors"
+              >
+                🏠
+              </button>
+              <span className="text-gray-400">›</span>
+              <button 
+                onClick={() => router.push(`/recipes/${recipeId}`)}
+                className="text-gray-700 hover:text-orange-600 font-semibold transition-colors truncate max-w-xs"
+              >
+                {recipe?.dishName || recipe?.recipeName || 'Công thức'}
+              </button>
+            </nav>
+            
+            {/* Actions */}
+            <div className="flex items-center gap-3">
+              <button 
+                onClick={() => router.push(`/recipes/${recipeId}`)}
+                className="text-sm px-3 py-1.5 bg-gray-100 text-gray-700 rounded-full hover:bg-gray-200 transition-colors font-medium"
+              >
+                ℹ️ Xem recipe
+              </button>
+              <button 
+                onClick={() => {
+                  if (confirm('Bạn có muốn thoát chế độ nấu? Tiến độ của bạn đã được lưu.')) {
+                    router.push(`/recipes/${recipeId}`);
+                  }
+                }}
+                className="text-sm px-3 py-1.5 bg-red-100 text-red-700 rounded-full hover:bg-red-200 transition-colors font-medium"
+              >
+                ✕ Thoát
+              </button>
+            </div>
+          </div>
+          
+          {/* Bottom Row - Progress */}
+          <div>
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-sm font-semibold text-gray-700">
+                Bước {stepNumber}/{instructions.length}
+              </span>
+              <span className="text-sm text-gray-600">
+                {Math.round((stepNumber / instructions.length) * 100)}% hoàn thành
+              </span>
+            </div>
+            <div className="w-full bg-gray-200 rounded-full h-2">
+              <div 
+                className="bg-gradient-to-r from-orange-500 to-amber-500 h-2 rounded-full transition-all duration-300"
+                style={{ width: `${(stepNumber / instructions.length) * 100}%` }}
+              />
+            </div>
+          </div>
+        </div>
+      </div>
 
       <div className="max-w-7xl mx-auto px-6 py-8">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -569,7 +623,7 @@ function StepPageContent() {
                           <p className="text-3xl font-bold text-gray-400 font-mono line-through">
                             0:00
                           </p>
-                          <p className="text-sm text-green-600 font-semibold mt-2">✓ Đã hoàn thành</p>
+                          <CompletedBadge isCompleted={true} className="mt-2" />
                         </>
                       ) : (
                         <>
@@ -637,16 +691,21 @@ function StepPageContent() {
                               {inst.description}
                             </p>
                           )}
+                          
+                          {/* Show completed badge for all steps */}
+                          {completedTimers.has(inst.step) && (
+                            <div className="mt-2">
+                              <CompletedBadge isCompleted={true} />
+                            </div>
+                          )}
+                          
+                          {/* Timer info - only for steps with timers */}
                           {inst.needsTime && inst.duration && (
                             <div className="flex items-center justify-between gap-2 mt-2">
                               <p className="text-sm text-purple-600 flex items-center gap-1">
                                 <span>⏱️</span>
                                 <span>{inst.duration}</span>
-                                {completedTimers.has(inst.step) ? (
-                                  <span className="ml-1 bg-gray-100 text-gray-600 px-2 py-0.5 rounded text-xs font-semibold">
-                                    ✓ Đã hoàn thành
-                                  </span>
-                                ) : activeTimers[inst.step] && (() => {
+                                {!completedTimers.has(inst.step) && activeTimers[inst.step] && (() => {
                                   const remaining = Math.floor((activeTimers[inst.step].endTime - Date.now()) / 1000);
                                   return remaining > 0 ? (
                                     <span className="ml-1 bg-green-100 text-green-700 px-2 py-0.5 rounded text-xs font-semibold">
@@ -657,6 +716,7 @@ function StepPageContent() {
                               </p>
                             </div>
                           )}
+                          
                           <button
                             onClick={() => router.push(`/cook/${recipeId}/steps/${inst.step}`)}
                             className="text-purple-600 hover:text-purple-800 text-sm font-medium mt-2 w-full text-left"
@@ -702,16 +762,21 @@ function StepPageContent() {
                                 {inst.description}
                               </p>
                             )}
+                            
+                            {/* Show completed badge for all steps */}
+                            {completedTimers.has(inst.step) && (
+                              <div className="mt-2">
+                                <CompletedBadge isCompleted={true} />
+                              </div>
+                            )}
+                            
+                            {/* Timer info - only for steps with timers */}
                             {inst.needsTime && inst.duration && (
                               <div className="flex items-center justify-between gap-2 mt-2">
                                 <p className="text-sm text-yellow-700 flex items-center gap-1">
                                   <span>⏱️</span>
                                   <span>{inst.duration}</span>
-                                  {completedTimers.has(inst.step) ? (
-                                    <span className="ml-1 bg-gray-100 text-gray-600 px-2 py-0.5 rounded text-xs font-semibold">
-                                      ✓ Đã hoàn thành
-                                    </span>
-                                  ) : activeTimers[inst.step] && (() => {
+                                  {!completedTimers.has(inst.step) && activeTimers[inst.step] && (() => {
                                     const remaining = Math.floor((activeTimers[inst.step].endTime - Date.now()) / 1000);
                                     return remaining > 0 ? (
                                       <span className="ml-1 bg-green-100 text-green-700 px-2 py-0.5 rounded text-xs font-semibold">
@@ -730,6 +795,7 @@ function StepPageContent() {
                                 )}
                               </div>
                             )}
+                            
                             <button
                               onClick={() => router.push(`/cook/${recipeId}/steps/${inst.step}`)}
                               className="text-blue-600 hover:text-blue-800 text-sm font-medium mt-2 w-full text-left"

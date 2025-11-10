@@ -194,23 +194,63 @@ export default function IngredientsPage() {
           {/* Confirmation Modal */}
           {showConfirmation && (
             <div className="fixed inset-0 bg-gradient-to-br from-orange-100/90 via-amber-50/90 to-pink-100/90 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fadeIn">
-              <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full p-8 border-2 border-orange-200 animate-slideUp">
-                <h3 className="text-2xl font-bold text-gray-900 mb-6">Xác nhận chuẩn bị xong nguyên liệu</h3>
+              <div className="bg-white rounded-2xl shadow-2xl max-w-3xl w-full p-8 border-2 border-orange-200 animate-slideUp max-h-[90vh] overflow-y-auto">
+                <div className="text-center mb-6">
+                  <div className="text-6xl mb-4">🎉</div>
+                  <h3 className="text-3xl font-bold text-gray-900 mb-2">Sẵn sàng nấu chưa?</h3>
+                  <p className="text-gray-600">
+                    Chuẩn bị bắt đầu nấu <span className="font-bold text-orange-600">{recipe.dishName || recipe.recipeName}</span>
+                  </p>
+                </div>
 
                 <div className="space-y-4 mb-8">
-                  <div className="bg-blue-50 border-l-4 border-blue-400 p-4 rounded">
-                    <p className="font-semibold text-blue-900 mb-1">💡 Mẹo:</p>
-                    <p className="text-gray-700">Chuẩn bị tất cả nguyên liệu trước khi bắt đầu nấu (mise en place) giúp quá trình nấu suôn sẻ hơn.</p>
+                  <div className="flex items-center gap-3 p-4 bg-green-50 border border-green-200 rounded-lg">
+                    <span className="text-2xl">✅</span>
+                    <div>
+                      <p className="font-semibold text-green-900">Đã chuẩn bị nguyên liệu</p>
+                      <p className="text-sm text-green-700">Tất cả {recipe.ingredientsList?.length || 0} nguyên liệu đã sẵn sàng</p>
+                    </div>
                   </div>
 
-                  <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded">
-                    <p className="font-semibold text-yellow-900 mb-1">⚠️ Cảnh báo:</p>
-                    <p className="text-gray-700">Nên cắt và chuẩn bị các nguyên liệu có yêu cầu đặc biệt trước (tỏi, hành, v.v.).</p>
+                  <div className="flex items-center gap-3 p-4 bg-orange-50 border border-orange-200 rounded-lg">
+                    <span className="text-2xl">👨‍🍳</span>
+                    <div>
+                      <p className="font-semibold text-orange-900">Sẵn sàng bắt tay vào công việc</p>
+                      <p className="text-sm text-orange-700">Bạn sẽ được hướng dẫn từng bước</p>
+                    </div>
                   </div>
+                </div>
 
-                  <div className="bg-green-50 border-l-4 border-green-400 p-4 rounded">
-                    <p className="font-semibold text-green-900 mb-1">✅ Sẵn sàng:</p>
-                    <p className="text-gray-700">Hãy đảm bảo tất cả dụng cụ nấu nướng đã chuẩn bị sẵn.</p>
+                <div className="bg-gradient-to-br from-blue-50 to-indigo-50 border-2 border-blue-300 rounded-xl p-6 mb-6">
+                  <h4 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+                    <span>💡</span>
+                    <span>Mẹo trước khi nấu</span>
+                  </h4>
+                  <div className="space-y-3">
+                    <div className="flex items-start gap-3">
+                      <div className="w-2 h-2 bg-blue-500 rounded-full mt-2 flex-shrink-0"></div>
+                      <p className="text-gray-700">
+                        <strong className="text-blue-900">Mise en place:</strong> Chuẩn bị tất cả nguyên liệu trước khi bắt đầu nấu giúp quá trình nấu suôn sẻ hơn.
+                      </p>
+                    </div>
+                    <div className="flex items-start gap-3">
+                      <div className="w-2 h-2 bg-yellow-500 rounded-full mt-2 flex-shrink-0"></div>
+                      <p className="text-gray-700">
+                        <strong className="text-yellow-900">Chuẩn bị trước:</strong> Nên cắt và chuẩn bị các nguyên liệu có yêu cầu đặc biệt trước (tỏi, hành, v.v.).
+                      </p>
+                    </div>
+                    <div className="flex items-start gap-3">
+                      <div className="w-2 h-2 bg-green-500 rounded-full mt-2 flex-shrink-0"></div>
+                      <p className="text-gray-700">
+                        <strong className="text-green-900">Dụng cụ:</strong> Hãy đảm bảo tất cả dụng cụ nấu nướng đã chuẩn bị sẵn.
+                      </p>
+                    </div>
+                    <div className="flex items-start gap-3">
+                      <div className="w-2 h-2 bg-purple-500 rounded-full mt-2 flex-shrink-0"></div>
+                      <p className="text-gray-700">
+                        <strong className="text-purple-900">Tự tin:</strong> Đừng sợ nếu chưa thành thạo. Hãy yên tâm thực hiện từng bước và đừng ngần ngại quay lại nếu cần.
+                      </p>
+                    </div>
                   </div>
                 </div>
 
@@ -219,13 +259,13 @@ export default function IngredientsPage() {
                     onClick={() => setShowConfirmation(false)}
                     className="flex-1 bg-gray-200 text-gray-900 font-semibold py-3 px-6 rounded-lg hover:bg-gray-300 transition-colors"
                   >
-                    Quay lại
+                    ← Quay lại
                   </button>
                   <button
                     onClick={() => router.push(`/cook/${recipeId}/steps/1`)}
-                    className="flex-1 bg-gradient-to-r from-orange-600 to-amber-600 text-white font-semibold py-3 px-6 rounded-lg hover:shadow-lg transition-shadow"
+                    className="flex-1 bg-gradient-to-r from-green-600 to-emerald-600 text-white font-semibold py-3 px-6 rounded-lg hover:shadow-lg transition-shadow"
                   >
-                    Bắt đầu nấu
+                    Bắt đầu nấu! 🚀
                   </button>
                 </div>
               </div>

@@ -342,7 +342,7 @@ export default function RecipeDetailPage() {
           </div>
         )}
 
-        {/* Edit Button */}
+        {/* Action Buttons */}
         <div className="flex gap-4 justify-center mb-12">
           <button
             onClick={() => router.push(`/cook/${recipeId}/ingredients`)}

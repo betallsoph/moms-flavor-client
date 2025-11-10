@@ -84,3 +84,22 @@ textarea::placeholder {
 .animate-slideUp {
   animation: slideUp 0.3s ease-out;
 }
+
+/* Custom Scrollbar for Timeline */
+.scrollbar-thin::-webkit-scrollbar {
+  height: 8px;
+}
+
+.scrollbar-thin::-webkit-scrollbar-track {
+  background: #f3f4f6;
+  border-radius: 10px;
+}
+
+.scrollbar-thin::-webkit-scrollbar-thumb {
+  background: #d8b4fe;
+  border-radius: 10px;
+}
+
+.scrollbar-thin::-webkit-scrollbar-thumb:hover {
+  background: #c084fc;
+}
