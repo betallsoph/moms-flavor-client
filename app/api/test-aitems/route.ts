@@ -1,5 +1,5 @@
 /**
- * Test API Route: Upload Sample Data to cook-history
+ * Test API Route: Upload Sample Data to AiTEMS-input/cook-history
  * 
  * Visit: http://localhost:3002/api/test-aitems
  */
@@ -91,7 +91,7 @@ export async function GET() {
       message: '🎉 Test uploads successful!',
       timestamp: new Date().toISOString(),
       bucket: 'moms-flavor-media',
-      folder: 'cook-history/',
+      folder: 'AiTEMS-input/cook-history/',
       ...results,
     });
     

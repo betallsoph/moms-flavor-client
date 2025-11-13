@@ -5,15 +5,23 @@ import { useRouter } from 'next/navigation';
 import { RecipeService } from '@/libs/recipeService';
 import type { Recipe } from '@/types/recipe';
 import { LoadingSpinner } from '@/components/ui';
+import { auth } from '@/libs/firebase';
+
+interface RecommendedRecipe extends Recipe {
+  recommendationScore?: number;
+}
 
 export default function WhatsCookingPage() {
   const router = useRouter();
   const [recipes, setRecipes] = useState<Recipe[]>([]);
   const [loading, setLoading] = useState(true);
   const [suggestedRecipes, setSuggestedRecipes] = useState<Recipe[]>([]);
+  const [aiRecommendations, setAiRecommendations] = useState<RecommendedRecipe[]>([]);
+  const [aiLoading, setAiLoading] = useState(false);
 
   useEffect(() => {
     loadRecipes();
+    loadAiRecommendations();
   }, []);
 
   const loadRecipes = async () => {
@@ -41,8 +49,27 @@ export default function WhatsCookingPage() {
     }
   };
 
+  const loadAiRecommendations = async () => {
+    const userId = auth.currentUser?.uid;
+    if (!userId) return;
+    
+    try {
+      setAiLoading(true);
+      const response = await fetch(`/api/recommendations?userId=${userId}&count=3&fallback=true`);
+      
+      if (response.ok) {
+        const data = await response.json();
+        setAiRecommendations(data.recommendations || []);
+      }
+    } catch (error) {
+      console.error('Error loading AI recommendations:', error);
+    } finally {
+      setAiLoading(false);
+    }
+  };
+
   const handleCookNow = (recipeId: string) => {
-    router.push(`/cook/${recipeId}/start-confirmation`);
+    router.push(`/cook/${recipeId}/ingredients`);
   };
 
   if (loading) {
@@ -91,11 +118,109 @@ export default function WhatsCookingPage() {
               </div>
             ) : (
               <>
-                <p className="text-gray-600 text-center text-lg mb-8">
-                  Dưới đây là những gợi ý món ăn cho bạn hôm nay! 🍳
-                </p>
+                {/* AI Recommendations Section */}
+                {aiRecommendations.length > 0 && (
+                  <div className="mb-12">
+                    <div className="flex items-center justify-between mb-6">
+                      <div className="flex items-center gap-3">
+                        <div className="text-3xl">🤖</div>
+                        <div>
+                          <h3 className="text-xl font-bold text-gray-900">Gợi ý bằng AI</h3>
+                          <p className="text-sm text-gray-600">✨ Được chọn dựa trên sở thích của bạn</p>
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => router.push('/recommendations')}
+                        className="text-blue-600 hover:text-blue-700 text-sm font-semibold"
+                      >
+                        Xem tất cả →
+                      </button>
+                    </div>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                      {aiRecommendations.map((recipe, index) => (
+                        <div
+                          key={recipe.id}
+                          className="bg-gradient-to-br from-purple-50 to-pink-50 rounded-xl p-6 border-2 border-purple-200 hover:shadow-lg transition-shadow cursor-pointer relative"
+                          onClick={() => handleCookNow(recipe.id)}
+                        >
+                          {/* AI Badge */}
+                          <div className="absolute top-4 right-4 bg-gradient-to-r from-purple-600 to-pink-600 text-white px-3 py-1 rounded-full text-xs font-bold">
+                            #{index + 1}
+                          </div>
+                          
+                          {recipe.coverImage && (
+                            <div className="w-full h-40 mb-4 rounded-lg overflow-hidden bg-gray-100">
+                              <img
+                                src={recipe.coverImage}
+                                alt={recipe.dishName}
+                                className="w-full h-full object-cover"
+                              />
+                            </div>
+                          )}
+                          
+                          <h3 className="font-bold text-gray-900 mb-2 text-lg">
+                            {recipe.dishName || recipe.recipeName}
+                          </h3>
+                          
+                          {recipe.recommendationScore && (
+                            <div className="mb-3">
+                              <span className="text-sm text-purple-600 font-semibold">
+                                {recipe.recommendationScore >= 0.8 ? '⭐ Rất phù hợp' : 
+                                 recipe.recommendationScore >= 0.6 ? '✨ Phù hợp' : '👍 Có thể thích'}
+                              </span>
+                            </div>
+                          )}
+                          
+                          <div className="flex items-center gap-2 mb-2 text-sm text-gray-600">
+                            <span>⏱️</span>
+                            <span>
+                              {recipe.cookingTime === 'very_fast' ? '< 15 phút' :
+                               recipe.cookingTime === 'fast' ? '15-30 phút' :
+                               recipe.cookingTime === 'medium' ? '30-60 phút' :
+                               recipe.cookingTime === 'slow' ? '1-2 giờ' : '> 2 giờ'}
+                            </span>
+                          </div>
+                          
+                          <div className="flex items-center gap-2 mb-4 text-sm text-gray-600">
+                            <span>⭐</span>
+                            <span>
+                              {recipe.difficulty === 'very_easy' ? 'Rất dễ' :
+                               recipe.difficulty === 'easy' ? 'Dễ' :
+                               recipe.difficulty === 'medium' ? 'Trung bình' :
+                               recipe.difficulty === 'hard' ? 'Khó' : 'Rất khó'}
+                            </span>
+                          </div>
+                          
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleCookNow(recipe.id);
+                            }}
+                            className="w-full bg-gradient-to-r from-purple-600 to-pink-600 text-white font-semibold py-2 px-4 rounded-lg hover:shadow-md transition-shadow text-sm"
+                          >
+                            🔥 Nấu ngay
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
 
-                {/* Suggested Recipes */}
+                {/* Divider */}
+                {aiRecommendations.length > 0 && (
+                  <div className="border-t border-gray-200 my-8 pt-8">
+                    <div className="flex items-center gap-3 mb-6">
+                      <div className="text-3xl">🎲</div>
+                      <div>
+                        <h3 className="text-xl font-bold text-gray-900">Gợi ý ngẫu nhiên</h3>
+                        <p className="text-sm text-gray-600">🎯 Khám phá món ăn mới</p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Random Suggested Recipes */}
                 {suggestedRecipes.length > 0 && (
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
                     {suggestedRecipes.map((recipe) => (

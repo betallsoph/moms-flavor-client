@@ -69,7 +69,7 @@ async function testAiTemsUpload() {
     console.log('🎉 All test uploads successful!\n');
     console.log('📂 Check your Naver Object Storage:');
     console.log('   Bucket: moms-flavor-media');
-    console.log('   Folder: cook-history/');
+    console.log('   Folder: AiTEMS-input/cook-history/');
     console.log('   Files:');
     console.log('   - interactions/interaction-test-*.json');
     console.log('   - items/item-test-*.json');

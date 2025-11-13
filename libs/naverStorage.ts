@@ -209,12 +209,12 @@ export function formatFileSize(bytes: number): string {
  * Được dùng để sync data cho AiTEMS recommendation system
  * 
  * @param data - JSON data object
- * @param folder - Folder path (e.g., 'cook-history/items')
+ * @param folder - Folder subfolder (e.g., 'items', 'users', 'interactions')
  * @param filename - Filename (e.g., 'items-2024-11-10.json')
  * @returns URL of uploaded JSON file
  * 
  * File structure for AiTEMS:
- * cook-history/
+ * AiTEMS-input/cook-history/
  *   ├── items/          # Recipe data
  *   │   └── items-YYYY-MM-DD.json
  *   ├── users/          # User preferences
@@ -228,7 +228,7 @@ export async function uploadJSON(
   filename: string
 ): Promise<string> {
   try {
-    const filepath = `cook-history/${folder}/${filename}`;
+    const filepath = `AiTEMS-input/cook-history/${folder}/${filename}`;
     
     console.log('🔄 Uploading JSON to Naver:', filepath);
     

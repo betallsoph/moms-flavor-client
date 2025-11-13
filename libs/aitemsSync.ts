@@ -7,7 +7,7 @@
  * Flow:
  * 1. User hoàn thành nấu ăn → createDiaryEntry()
  * 2. Trigger syncCookingEvent() → Format data
- * 3. Upload JSON lên cook-history/ folder
+ * 3. Upload JSON lên AiTEMS-input/cook-history/ folder
  * 4. AiTEMS đọc data → Generate recommendations
  * 
  * Data Types (theo AiTEMS schema):
