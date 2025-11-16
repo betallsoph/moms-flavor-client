@@ -70,9 +70,22 @@ export default function HomePage() {
             icon="👨‍🍳"
             decorIcon="🎯"
             title="Hôm nay nấu gì?"
-            description="Gợi ý món ăn phù hợp với bạn"
+            description="Gợi ý ngẫu nhiên món ăn"
             borderColor="border-orange-200 hover:border-orange-400"
             bgColor="from-orange-100 to-amber-100"
+          />
+        </div>
+
+        {/* Middle Row - AI Recommendations (Featured) */}
+        <div className="mb-6">
+          <ActionCard
+            onClick={() => router.push('/recommendations')}
+            icon="🤖"
+            decorIcon="✨"
+            title="Gợi ý AI thông minh"
+            description="Dự đoán món ăn dựa trên lịch sử nấu và sở thích của bạn"
+            borderColor="border-purple-300 hover:border-purple-500"
+            bgColor="from-purple-200 to-pink-200"
           />
         </div>
 
