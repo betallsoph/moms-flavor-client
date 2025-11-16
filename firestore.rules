@@ -1,0 +1,61 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Helper functions
+    function isSignedIn() {
+      return request.auth != null;
+    }
+    
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+    
+    // Users collection
+    match /users/{userId} {
+      // User can only read/write their own data
+      allow read, write: if isOwner(userId);
+      
+      // Recipes subcollection
+      match /recipes/{recipeId} {
+        // User can CRUD their own recipes
+        allow read, write: if isOwner(userId);
+        
+        // Validate recipe data structure
+        allow create: if isOwner(userId) 
+          && request.resource.data.keys().hasAll(['id', 'createdAt'])
+          && request.resource.data.id is string
+          && request.resource.data.createdAt is string;
+        
+        allow update: if isOwner(userId)
+          && request.resource.data.id == resource.data.id; // Can't change ID
+      }
+      
+      // Cooking sessions subcollection
+      match /cookingSessions/{sessionId} {
+        // User can CRUD their own cooking sessions
+        allow read, write: if isOwner(userId);
+        
+        // Validate session data
+        allow create, update: if isOwner(userId)
+          && request.resource.data.keys().hasAll(['userId', 'recipeId', 'lastUpdated'])
+          && request.resource.data.userId == userId
+          && request.resource.data.completedSteps is list
+          && request.resource.data.activeTimers is map;
+      }
+      
+      // Cooking diary subcollection - NEW
+      match /cookingDiary/{entryId} {
+        // User can CRUD their own diary entries
+        allow read, write: if isOwner(userId);
+        
+        // Validate diary entry data
+        allow create: if isOwner(userId) 
+          && request.resource.data.keys().hasAll(['id', 'userId', 'timestamp'])
+          && request.resource.data.userId == userId
+          && request.resource.data.timestamp is string;
+      }
+    }
+  }
+}
