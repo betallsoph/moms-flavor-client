@@ -61,7 +61,7 @@ export default function LoginPage() {
           </div>
 
           {/* Login Form Card */}
-          <div className="bg-white rounded-2xl shadow-xl border border-orange-100 p-8">
+          <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl border border-orange-100 p-8">
             <form onSubmit={handleSubmit} className="space-y-5">
               {error && (
                 <div className="bg-red-50 border-2 border-red-200 text-red-700 px-4 py-3 rounded-lg flex items-center gap-2">
@@ -133,7 +133,7 @@ export default function LoginPage() {
                   <div className="w-full border-t border-gray-200"></div>
                 </div>
                 <div className="relative flex justify-center text-sm">
-                  <span className="px-3 bg-white text-gray-500 font-medium">Hoặc đăng nhập với</span>
+                  <span className="px-3 bg-white/80 backdrop-blur-sm text-gray-500 font-medium">Hoặc đăng nhập với</span>
                 </div>
               </div>
             </div>
