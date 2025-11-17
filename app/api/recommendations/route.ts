@@ -104,74 +104,17 @@ export async function GET(request: NextRequest) {
 }
 
 /**
- * Fallback: Get recommendations when AiTEMS is not available
- * Uses simple heuristics:
- * - Recipes user hasn't cooked yet
- * - Popular recipes (most cooked by all users)
- * - Recipes matching user's skill level
+ * Fallback: Return message when AiTEMS is not configured
  */
 async function getFallbackRecommendations(userId: string, count: number) {
-  try {
-    console.log('📊 Generating fallback recommendations...');
+  console.log('⚠️ AiTEMS not configured - returning empty recommendations');
 
-    // Get user's cooking history to exclude already-cooked recipes
-    const cookedRecipeIds = await getUserCookedRecipes(userId);
-
-    // Get all user's recipes
-    const recipesRef = collection(db, 'users', userId, 'recipes');
-    const snapshot = await getDocs(recipesRef);
-
-    let recipes: Recipe[] = snapshot.docs.map(doc => ({
-      id: doc.id,
-      ...doc.data()
-    } as Recipe));
-
-    // Filter out already-cooked recipes
-    recipes = recipes.filter(r => !cookedRecipeIds.includes(r.id));
-
-    // Sort by difficulty (easier recipes first for beginners)
-    const difficultyOrder = ['very_easy', 'easy', 'medium', 'hard', 'very_hard'];
-    recipes.sort((a, b) => {
-      const aIndex = difficultyOrder.indexOf(a.difficulty || 'medium');
-      const bIndex = difficultyOrder.indexOf(b.difficulty || 'medium');
-      return aIndex - bIndex;
-    });
-
-    // Limit results
-    const recommendations = recipes.slice(0, count);
-
-    return NextResponse.json({
-      source: 'fallback',
-      count: recommendations.length,
-      recommendations,
-      message: 'AiTEMS not configured - showing beginner-friendly recipes you haven\'t cooked yet',
-    });
-
-  } catch (error) {
-    console.error('❌ Fallback recommendations failed:', error);
-    return NextResponse.json({
-      source: 'fallback',
-      count: 0,
-      recommendations: [],
-      error: 'Failed to generate fallback recommendations',
-    });
-  }
-}
-
-/**
- * Get recipe IDs that user has already cooked
- */
-async function getUserCookedRecipes(userId: string): Promise<string[]> {
-  try {
-    const diaryRef = collection(db, 'users', userId, 'cookingDiary');
-    const snapshot = await getDocs(diaryRef);
-
-    const recipeIds = snapshot.docs.map(doc => doc.data().recipeId);
-    return [...new Set(recipeIds)]; // Unique recipe IDs
-  } catch (error) {
-    console.error('❌ Error getting cooked recipes:', error);
-    return [];
-  }
+  return NextResponse.json({
+    source: 'fallback',
+    count: 0,
+    recommendations: [],
+    message: 'Vui lòng cấu hình NAVER AiTEMS để sử dụng tính năng gợi ý AI',
+  });
 }
 
 /**

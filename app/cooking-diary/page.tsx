@@ -143,15 +143,15 @@ export default function CookingDiaryPage() {
         {loading ? (
           <LoadingSpinner message="Đang tải nhật ký..." />
         ) : entries.length === 0 ? (
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-12 text-center">
+          <div className="bg-gray-50 border border-gray-200 rounded-2xl p-12 text-center shadow-sm">
             <div className="max-w-md mx-auto">
-              <div className="w-24 h-24 bg-gradient-to-br from-purple-100 to-pink-100 rounded-full flex items-center justify-center mx-auto mb-6">
+              <div className="w-24 h-24 bg-gradient-to-br from-purple-100 to-pink-100 rounded-full flex items-center justify-center mx-auto mb-6 shadow-md">
                 <span className="text-5xl">📝</span>
               </div>
               <h3 className="text-2xl font-semibold text-gray-900 mb-3">
                 Chưa có lịch sử nấu nào
               </h3>
-              <p className="text-gray-500 mb-8">
+              <p className="text-gray-600 mb-8">
                 Hãy nấu một món ăn và ghi lại kinh nghiệm của bạn!
               </p>
               <GradientButton onClick={() => router.push('/recipes')}>
@@ -165,10 +165,10 @@ export default function CookingDiaryPage() {
             <div className="flex items-center justify-center gap-4 mb-12">
               <button
                 onClick={() => setActiveTab('by-recipe')}
-                className={`px-8 py-4 rounded-xl font-semibold transition-all ${
+                className={`px-8 py-4 rounded-2xl font-bold transition-all duration-300 ${
                   activeTab === 'by-recipe'
-                    ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg'
-                    : 'bg-white text-gray-700 border-2 border-gray-200 hover:border-purple-300'
+                    ? 'bg-gradient-to-r from-purple-200 to-pink-200 text-purple-800 shadow-lg scale-105 border-2 border-purple-300'
+                    : 'bg-white text-gray-700 border-2 border-gray-200 hover:border-purple-300 hover:bg-purple-50'
                 }`}
               >
                 <span className="flex items-center gap-2">
@@ -178,10 +178,10 @@ export default function CookingDiaryPage() {
               </button>
               <button
                 onClick={() => setActiveTab('timeline')}
-                className={`px-8 py-4 rounded-xl font-semibold transition-all ${
+                className={`px-8 py-4 rounded-2xl font-bold transition-all duration-300 ${
                   activeTab === 'timeline'
-                    ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg'
-                    : 'bg-white text-gray-700 border-2 border-gray-200 hover:border-purple-300'
+                    ? 'bg-gradient-to-r from-purple-200 to-pink-200 text-purple-800 shadow-lg scale-105 border-2 border-purple-300'
+                    : 'bg-white text-gray-700 border-2 border-gray-200 hover:border-purple-300 hover:bg-purple-50'
                 }`}
               >
                 <span className="flex items-center gap-2">
@@ -197,21 +197,21 @@ export default function CookingDiaryPage() {
                 {recipeGroups.map((group) => (
                   <div
                     key={group.recipeId}
-                    className="bg-white rounded-xl shadow-md hover:shadow-lg border border-purple-100 hover:border-purple-300 overflow-hidden transition-all group"
+                    className="bg-white rounded-2xl shadow-md border-2 border-purple-200 overflow-hidden transition-all duration-300 group hover:border-purple-400 hover:shadow-xl hover:scale-[1.02] hover:-translate-y-1"
                   >
                     {/* Card Header */}
-                    <div className="bg-gradient-to-r from-purple-100 to-pink-100 px-6 py-6">
+                    <div className="bg-gradient-to-r from-purple-50 to-pink-50 px-6 py-6 border-b border-purple-200">
                       <h3 className="text-xl font-bold text-gray-900 mb-3">
                         {group.dishName}
                       </h3>
                       <div className="space-y-2">
-                        <div className="flex items-center gap-2 text-gray-700">
+                        <div className="flex items-center gap-2 text-gray-600">
                           <span>📅</span>
                           <span className="text-sm">Lần gần nhất: {group.latestEntry.cookDate}</span>
                         </div>
                         <div className="flex items-center gap-2">
                           <span>🍳</span>
-                          <span className="text-sm font-semibold text-purple-600">
+                          <span className="text-sm font-semibold text-gray-700">
                             Đã nấu {group.count} lần
                           </span>
                         </div>
@@ -222,7 +222,7 @@ export default function CookingDiaryPage() {
                     <div className="px-6 py-4">
                       <button
                         onClick={() => router.push(`/cooking-diary/${group.recipeId}`)}
-                        className="w-full bg-purple-600 text-white font-semibold py-3 rounded-lg hover:bg-purple-700 transition-colors"
+                        className="w-full bg-gradient-to-r from-purple-100 to-pink-100 text-purple-800 border-2 border-purple-200 font-bold py-3 rounded-xl hover:shadow-lg hover:from-purple-200 hover:to-pink-200 transition-all duration-300 hover:scale-105"
                       >
                         Xem lịch sử nấu ({group.count})
                       </button>
@@ -248,12 +248,12 @@ export default function CookingDiaryPage() {
                 {/* Timeline by Month */}
                 {monthKeys.map((monthYear) => {
                   const monthEntries = groupedByMonth[monthYear];
-                  
+
                   return (
                     <div key={monthYear} className="relative">
                       {/* Month Header */}
                       <div className="flex items-center gap-4 mb-6">
-                        <div className="bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold py-2 px-6 rounded-full shadow-md">
+                        <div className="bg-gradient-to-r from-purple-200 to-pink-200 text-purple-800 font-bold py-2 px-6 rounded-full shadow-md border-2 border-purple-300">
                           {monthYear}
                         </div>
                         <div className="flex-1 h-0.5 bg-gradient-to-r from-purple-200 to-transparent"></div>
@@ -266,15 +266,15 @@ export default function CookingDiaryPage() {
                             <button
                               key={entry.id}
                               onClick={() => router.push(`/cooking-diary/entry/${entry.id}`)}
-                              className="flex-shrink-0 w-64 bg-white rounded-xl shadow-md hover:shadow-xl border-2 border-purple-100 hover:border-purple-300 transition-all p-4 text-left group"
+                              className="flex-shrink-0 w-64 bg-white rounded-2xl shadow-md border-2 border-purple-200 hover:border-purple-400 hover:shadow-xl transition-all duration-300 p-4 text-left group hover:scale-[1.03]"
                             >
                               {/* Story Card */}
                               <div className="space-y-3">
                                 {/* Image or Icon */}
-                                <div className="w-full h-40 bg-gradient-to-br from-purple-100 to-pink-100 rounded-lg flex items-center justify-center overflow-hidden">
+                                <div className="w-full h-40 bg-gradient-to-br from-purple-50 to-pink-50 border border-purple-200 rounded-xl flex items-center justify-center overflow-hidden shadow-sm">
                                   {entry.images && entry.images.length > 0 ? (
-                                    <img 
-                                      src={entry.images[0]} 
+                                    <img
+                                      src={entry.images[0]}
                                       alt={entry.dishName}
                                       className="w-full h-full object-cover"
                                     />
@@ -284,7 +284,7 @@ export default function CookingDiaryPage() {
                                 </div>
 
                                 {/* Dish Name */}
-                                <h3 className="font-bold text-gray-900 text-lg line-clamp-2 group-hover:text-purple-600 transition-colors">
+                                <h3 className="font-bold text-gray-900 text-lg line-clamp-2 transition-colors">
                                   {entry.dishName}
                                 </h3>
 
@@ -297,12 +297,12 @@ export default function CookingDiaryPage() {
                                 {/* Quick Info */}
                                 <div className="flex gap-2 flex-wrap">
                                   {entry.mistakes && entry.mistakes.trim() && (
-                                    <span className="text-xs bg-orange-100 text-orange-700 px-2 py-1 rounded-full">
+                                    <span className="text-xs bg-purple-100 text-purple-700 px-2 py-1 rounded-full border border-purple-200">
                                       📝 Ghi chú
                                     </span>
                                   )}
                                   {entry.images && entry.images.length > 0 && (
-                                    <span className="text-xs bg-purple-100 text-purple-700 px-2 py-1 rounded-full">
+                                    <span className="text-xs bg-pink-100 text-pink-700 px-2 py-1 rounded-full border border-pink-200">
                                       📸 {entry.images.length}
                                     </span>
                                   )}

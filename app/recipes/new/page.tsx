@@ -1,7 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import Image from 'next/image';
 import { RecipeService } from '@/libs/recipeService';
 import { Recipe } from '@/types/recipe';
 
@@ -11,14 +12,31 @@ export default function NewRecipePage() {
     dishName: '',
     recipeName: '',
     sameAsDish: false,
-    difficulty: 'medium',
-    cookingTime: 'medium',
+    difficulty: '',
+    cookingTime: '',
     estimateTime: false,
     estimatedTime: '',
     instructor: '',
     description: '',
   });
   const [loading, setLoading] = useState(false);
+  const [existingInstructors, setExistingInstructors] = useState<string[]>([]);
+  const [isAddingNewInstructor, setIsAddingNewInstructor] = useState(false);
+  const [selectedInstructor, setSelectedInstructor] = useState('');
+
+  // Load existing instructors from recipes
+  useEffect(() => {
+    const loadInstructors = async () => {
+      const recipes = await RecipeService.getAll();
+      const instructors = recipes
+        .map(r => r.instructor)
+        .filter((instructor): instructor is string => !!instructor && instructor.trim() !== '')
+        .filter((value, index, self) => self.indexOf(value) === index) // unique
+        .sort();
+      setExistingInstructors(instructors);
+    };
+    loadInstructors();
+  }, []);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, type } = e.target;
@@ -56,85 +74,42 @@ export default function NewRecipePage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-orange-50 via-white to-amber-50">
-      {/* Header with Back Button */}
-      <header className="border-b border-orange-100 bg-white/80 backdrop-blur-sm sticky top-0 z-50">
-        <div className="max-w-6xl mx-auto px-6 py-4">
-          <div className="flex items-center justify-between">
-            <button
-              onClick={() => router.push('/home')}
-              className="flex items-center gap-2 px-4 py-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
-            >
-              <span className="text-xl">←</span>
-              <span className="text-sm font-medium">Quay lại trang chủ</span>
-            </button>
-            
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-gradient-to-br from-orange-400 to-amber-500 rounded-xl flex items-center justify-center shadow-sm">
-                <span className="text-white text-xl">📝</span>
-              </div>
-              <h1 className="text-xl font-bold bg-gradient-to-r from-orange-600 to-amber-600 bg-clip-text text-transparent">
-                Thêm công thức mới
-              </h1>
-            </div>
-
-            <div className="w-40"></div>
-          </div>
-        </div>
-      </header>
-
       {/* Main Content */}
-      <main className="max-w-6xl mx-auto px-6 py-12">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
-          {/* Left Side - Illustration */}
-          <div className="hidden lg:flex items-center justify-center">
-            <div className="relative w-full max-w-md">
-              {/* Animated Cooking Illustration */}
-              <div className="space-y-6">
-                {/* Pot */}
-                <div className="flex justify-center">
-                  <div className="relative">
-                    {/* Pot body */}
-                    <div className="w-32 h-24 bg-gradient-to-b from-orange-400 to-orange-600 rounded-b-3xl shadow-lg border-4 border-orange-700"></div>
-                    {/* Pot handle */}
-                    <div className="absolute -left-6 top-6 w-8 h-12 border-4 border-orange-700 rounded-full"></div>
-                    {/* Steam - Animated */}
-                    <div className="absolute -top-8 left-4 space-y-2">
-                      <div className="w-3 h-3 bg-orange-300 rounded-full animate-bounce opacity-70"></div>
-                      <div className="w-3 h-3 bg-orange-300 rounded-full animate-bounce opacity-50" style={{animationDelay: '0.2s'}}></div>
-                    </div>
-                    <div className="absolute -top-8 right-4 space-y-2">
-                      <div className="w-3 h-3 bg-orange-300 rounded-full animate-bounce opacity-70" style={{animationDelay: '0.1s'}}></div>
-                      <div className="w-3 h-3 bg-orange-300 rounded-full animate-bounce opacity-50" style={{animationDelay: '0.3s'}}></div>
-                    </div>
-                  </div>
-                </div>
+      <main className="max-w-7xl mx-auto px-6 py-12">
+        <div className="bg-white rounded-2xl shadow-lg border border-orange-100 p-8">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+            {/* Logo and Image inside modal */}
+            <div className="flex flex-col items-center justify-center space-y-6">
+              {/* Logo */}
+              <div className="flex justify-center">
+                <Image
+                  src="/assets/logo/logo66.png"
+                  alt="Mom's Flavor Logo"
+                  width={365}
+                  height={365}
+                  className="object-contain"
+                />
+              </div>
 
-                {/* Chef */}
-                <div className="flex justify-center">
-                  <div className="text-center">
-                    <div className="text-6xl mb-2 animate-pulse">👨‍🍳</div>
-                    <p className="text-gray-600 font-medium">Hãy chia sẻ công thức</p>
-                    <p className="text-gray-500 text-sm">và ghi nhớ người chỉ nấu</p>
-                  </div>
-                </div>
-
-                {/* Ingredients Icons - Floating */}
-                <div className="flex justify-around px-4">
-                  <div className="text-3xl animate-bounce" style={{animationDelay: '0s'}}>🧅</div>
-                  <div className="text-3xl animate-bounce" style={{animationDelay: '0.2s'}}>🍅</div>
-                  <div className="text-3xl animate-bounce" style={{animationDelay: '0.4s'}}>🧄</div>
-                </div>
+              {/* Image */}
+              <div className="relative w-full p-2 border-2 border-orange-300 rounded-lg">
+                <Image
+                  src="/assets/background/create1.png"
+                  alt="Create Recipe Illustration"
+                  width={500}
+                  height={500}
+                  className="object-contain w-full h-auto rounded-lg"
+                />
               </div>
             </div>
-          </div>
 
-          {/* Right Side - Form */}
-          <div className="bg-white rounded-2xl shadow-lg border border-orange-100 p-8">
-            <form onSubmit={handleSubmit} className="space-y-6">
+            {/* Form inside modal */}
+            <div>
+              <form onSubmit={handleSubmit} className="space-y-6">
             {/* Dish Name */}
             <div>
-              <label htmlFor="dishName" className="block text-sm font-semibold text-gray-900 mb-2">
-                Tên món *
+              <label htmlFor="dishName" className="block text-sm font-semibold text-orange-700 mb-2">
+                Tên món
               </label>
               <input
                 type="text"
@@ -143,15 +118,15 @@ export default function NewRecipePage() {
                 value={formData.dishName}
                 onChange={handleChange}
                 required
-                placeholder="VD: Cơm chiên Thái, Phở bò..."
+                placeholder="Cơm chiên Thái, Phở bò..."
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent text-base"
               />
             </div>
 
             {/* Recipe Name */}
             <div>
-              <label htmlFor="recipeName" className="block text-sm font-semibold text-gray-900 mb-2">
-                Tên công thức *
+              <label htmlFor="recipeName" className="block text-sm font-semibold text-orange-700 mb-2">
+                Tên công thức
               </label>
               <input
                 type="text"
@@ -161,7 +136,7 @@ export default function NewRecipePage() {
                 onChange={handleChange}
                 required
                 disabled={formData.sameAsDish}
-                placeholder="VD: Cơm chiên kiểu nhà hàng..."
+                placeholder="Cơm chiên kiểu nhà hàng, Cá kho nhưng ít cay..."
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent text-base disabled:bg-gray-100 disabled:cursor-not-allowed"
               />
               <div className="mt-2 flex items-center gap-2">
@@ -171,102 +146,167 @@ export default function NewRecipePage() {
                   name="sameAsDish"
                   checked={formData.sameAsDish}
                   onChange={handleChange}
-                  className="w-4 h-4 text-orange-600 border-gray-300 rounded focus:ring-orange-500"
+                  className="appearance-none w-5 h-5 bg-orange-50 border-2 border-orange-300 rounded-full focus:outline-none transition-all cursor-pointer hover:border-orange-400 checked:border-orange-500"
+                  style={{
+                    backgroundImage: formData.sameAsDish
+                      ? 'radial-gradient(circle, #f97316 35%, transparent 35%)'
+                      : 'none'
+                  }}
                 />
-                <label htmlFor="sameAsDish" className="text-sm text-gray-600">
+                <label htmlFor="sameAsDish" className="text-sm text-orange-700 cursor-pointer">
                   Tương tự tên món
                 </label>
               </div>
             </div>
 
-            {/* Difficulty */}
-            <div>
-              <label htmlFor="difficulty" className="block text-sm font-semibold text-gray-900 mb-2">
-                Độ khó *
-              </label>
-              <select
-                id="difficulty"
-                name="difficulty"
-                value={formData.difficulty}
-                onChange={handleChange}
-                required
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent text-base"
-              >
-                <option value="very_easy">⭐ Rất dễ</option>
-                <option value="easy">⭐⭐ Dễ</option>
-                <option value="medium">⭐⭐⭐ Trung bình</option>
-                <option value="hard">⭐⭐⭐⭐ Khó</option>
-                <option value="very_hard">⭐⭐⭐⭐⭐ Rất khó</option>
-              </select>
-            </div>
-
-            {/* Cooking Time */}
-            <div>
-              <label htmlFor="cookingTime" className="block text-sm font-semibold text-gray-900 mb-2">
-                Thời gian nấu *
-              </label>
-              <select
-                id="cookingTime"
-                name="cookingTime"
-                value={formData.cookingTime}
-                onChange={handleChange}
-                required
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent text-base"
-              >
-                <option value="very_fast">⚡ Rất nhanh (&lt; 15 phút)</option>
-                <option value="fast">⏱️ Nhanh (15-30 phút)</option>
-                <option value="medium">🕐 Trung bình (30-60 phút)</option>
-                <option value="slow">⏳ Chậm (1-2 giờ)</option>
-                <option value="very_slow">🕰️ Rất chậm (&gt; 2 giờ)</option>
-              </select>
-              <div className="mt-2 flex items-center gap-2">
-                <input
-                  type="checkbox"
-                  id="estimateTime"
-                  name="estimateTime"
-                  checked={formData.estimateTime}
-                  onChange={handleChange}
-                  className="w-4 h-4 text-orange-600 border-gray-300 rounded focus:ring-orange-500"
-                />
-                <label htmlFor="estimateTime" className="text-sm text-gray-600">
-                  Ước lượng thời gian nấu
+            {/* Difficulty & Cooking Time - Same Row */}
+            <div className="grid grid-cols-2 gap-4">
+              {/* Difficulty */}
+              <div>
+                <label htmlFor="difficulty" className="block text-sm font-semibold text-orange-700 mb-2">
+                  Độ khó
                 </label>
-              </div>
-              {formData.estimateTime && (
-                <input
-                  type="text"
-                  name="estimatedTime"
-                  value={formData.estimatedTime}
+                <select
+                  id="difficulty"
+                  name="difficulty"
+                  value={formData.difficulty}
                   onChange={handleChange}
-                  placeholder="VD: 45 phút, 1 giờ 30 phút..."
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent text-base mt-2"
-                />
-              )}
+                  required
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent text-base"
+                >
+                  <option value="" disabled>Chọn độ khó</option>
+                  <option value="very_easy">Rất dễ</option>
+                  <option value="easy">Dễ</option>
+                  <option value="medium">Trung bình</option>
+                  <option value="hard">Khó</option>
+                  <option value="very_hard">Rất khó</option>
+                </select>
+              </div>
+
+              {/* Cooking Time & Estimated Time */}
+              <div className="space-y-3">
+                <div>
+                  <label htmlFor="cookingTime" className="block text-sm font-semibold text-orange-700 mb-2">
+                    Thời gian nấu
+                  </label>
+                  <select
+                    id="cookingTime"
+                    name="cookingTime"
+                    value={formData.cookingTime}
+                    onChange={handleChange}
+                    required
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent text-base"
+                  >
+                    <option value="" disabled>Chọn thời gian nấu</option>
+                    <option value="very_fast">Rất nhanh (&lt; 15 phút)</option>
+                    <option value="fast">Nhanh (15-30 phút)</option>
+                    <option value="medium">Trung bình (30-60 phút)</option>
+                    <option value="slow">Chậm (1-2 giờ)</option>
+                    <option value="very_slow">Rất chậm (&gt; 2 giờ)</option>
+                  </select>
+                </div>
+
+                {/* Estimated Time */}
+                <div>
+                  <div className="flex items-center gap-2 mb-2">
+                    <input
+                      type="checkbox"
+                      id="estimateTime"
+                      name="estimateTime"
+                      checked={formData.estimateTime}
+                      onChange={handleChange}
+                      className="appearance-none w-5 h-5 bg-orange-50 border-2 border-orange-300 rounded-full focus:outline-none transition-all cursor-pointer hover:border-orange-400 checked:border-orange-500"
+                      style={{
+                        backgroundImage: formData.estimateTime
+                          ? 'radial-gradient(circle, #f97316 35%, transparent 35%)'
+                          : 'none'
+                      }}
+                    />
+                    <label htmlFor="estimateTime" className="text-sm text-orange-700 cursor-pointer">
+                      Ước lượng thời gian nấu
+                    </label>
+                  </div>
+                  {formData.estimateTime && (
+                    <input
+                      type="text"
+                      name="estimatedTime"
+                      value={formData.estimatedTime}
+                      onChange={handleChange}
+                      placeholder="VD: 45 phút, 1 giờ 30 phút..."
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent text-base"
+                    />
+                  )}
+                </div>
+              </div>
             </div>
 
             {/* Instructor */}
             <div>
-              <label htmlFor="instructor" className="block text-sm font-semibold text-gray-900 mb-2">
+              <label htmlFor="instructor" className="block text-sm font-semibold text-orange-700 mb-2">
                 Người hướng dẫn
               </label>
-              <input
-                type="text"
-                id="instructor"
-                name="instructor"
-                value={formData.instructor}
-                onChange={handleChange}
-                placeholder="VD: Mẹ, Ông, Bà, Cô, Bạn bè..."
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent text-base"
-              />
-              <p className="mt-1 text-xs text-gray-500">
-                💡 Gõ tên để thêm mới hoặc chọn từ danh sách có sẵn
-              </p>
+
+              {!isAddingNewInstructor ? (
+                /* Dropdown to select existing or add new */
+                <div>
+                  <select
+                    id="instructor-select"
+                    value={selectedInstructor}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      if (value === '__ADD_NEW__') {
+                        setIsAddingNewInstructor(true);
+                        setSelectedInstructor('');
+                        setFormData(prev => ({ ...prev, instructor: '' }));
+                      } else {
+                        setSelectedInstructor(value);
+                        setFormData(prev => ({ ...prev, instructor: value }));
+                      }
+                    }}
+                    className={`w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent text-base ${!selectedInstructor ? 'text-gray-400' : 'text-gray-900'}`}
+                  >
+                    <option value="" disabled>Chọn hoặc tạo người hướng dẫn mới</option>
+                    {existingInstructors.map((instructor) => (
+                      <option key={instructor} value={instructor}>
+                        {instructor}
+                      </option>
+                    ))}
+                    <option value="__ADD_NEW__" className="font-semibold text-orange-600">
+                      + Thêm mới...
+                    </option>
+                  </select>
+                </div>
+              ) : (
+                /* Input field for new instructor */
+                <div className="space-y-2">
+                  <input
+                    type="text"
+                    id="instructor"
+                    name="instructor"
+                    value={formData.instructor}
+                    onChange={handleChange}
+                    placeholder="Mẹ, Ông, Bà, Cô, Anh, Chị, Người thân, Bạn bè..."
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent text-base"
+                    autoFocus
+                  />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsAddingNewInstructor(false);
+                      setFormData(prev => ({ ...prev, instructor: '' }));
+                    }}
+                    className="text-sm text-orange-600 hover:text-orange-700 font-medium"
+                  >
+                    ← Quay lại chọn từ danh sách
+                  </button>
+                </div>
+              )}
             </div>
 
             {/* Description */}
             <div>
-              <label htmlFor="description" className="block text-sm font-semibold text-gray-900 mb-2">
-                Mô tả món - công thức *
+              <label htmlFor="description" className="block text-sm font-semibold text-orange-700 mb-2">
+                Mô tả món - công thức
               </label>
               <textarea
                 id="description"
@@ -281,23 +321,24 @@ export default function NewRecipePage() {
             </div>
 
             {/* Buttons */}
-            <div className="flex gap-4 pt-4">
+            <div className="space-y-3 pt-4">
               <button
                 type="submit"
                 disabled={loading}
-                className="flex-1 bg-gradient-to-r from-orange-600 to-amber-600 text-white font-semibold py-3 px-6 rounded-lg hover:shadow-lg transition-shadow disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full p-4 bg-orange-100 hover:bg-orange-200 border-2 border-orange-300 rounded-xl transition-all hover:scale-[1.02] font-bold text-orange-700 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
               >
                 {loading ? 'Đang lưu...' : 'Lưu công thức'}
               </button>
               <button
                 type="button"
-                onClick={() => router.push('/home')}
-                className="flex-1 bg-gray-200 text-gray-900 font-semibold py-3 px-6 rounded-lg hover:bg-gray-300 transition-colors"
+                onClick={() => router.push('/recipes')}
+                className="w-full p-3 bg-gray-50 hover:bg-gray-100 border-2 border-gray-200 rounded-xl transition-all hover:scale-[1.02] font-bold text-gray-700 text-sm"
               >
                 Hủy
               </button>
             </div>
             </form>
+            </div>
           </div>
         </div>
       </main>

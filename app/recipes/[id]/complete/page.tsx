@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
-import { PageContainer, PageHeader, LoadingSpinner, GradientButton } from '@/components/ui';
+import { LoadingSpinner } from '@/components/ui';
 import { RecipeService } from '@/libs/recipeService';
 
 interface Ingredient {
@@ -114,32 +114,24 @@ export default function CompleteRecipePage() {
 
   if (!recipe) {
     return (
-      <PageContainer>
-        <div className="flex min-h-screen items-center justify-center">
-          <div className="text-center">
-            <p className="text-2xl font-bold text-gray-900 mb-4">Không tìm thấy công thức</p>
-            <GradientButton onClick={() => router.push('/recipes')}>
-              Quay lại
-            </GradientButton>
-          </div>
+      <div className="min-h-screen bg-gradient-to-br from-orange-50 via-white to-amber-50 flex items-center justify-center px-6">
+        <div className="text-center">
+          <p className="text-2xl font-bold text-gray-900 mb-4">Không tìm thấy công thức</p>
+          <button
+            onClick={() => router.push('/recipes')}
+            className="px-6 py-3 bg-orange-100 hover:bg-orange-200 border-2 border-orange-300 rounded-xl transition-all hover:scale-[1.02] font-bold text-orange-700"
+          >
+            Quay lại
+          </button>
         </div>
-      </PageContainer>
+      </div>
     );
   }
 
   return (
-    <PageContainer>
-      <PageHeader
-        icon="🛒"
-        title="Nhập nguyên liệu"
-        backButton={{
-          label: 'Quay lại',
-          onClick: () => router.push(`/recipes/${recipeId}`),
-        }}
-      />
-
+    <div className="min-h-screen bg-gradient-to-br from-orange-50 via-white to-amber-50">
       <main className="max-w-4xl mx-auto px-6 py-12">
-        <div className="bg-white rounded-2xl shadow-lg border border-orange-100 p-8">
+        <div className="bg-white rounded-2xl shadow-lg border-2 border-orange-200 p-8">
           <div className="mb-8">
             <h2 className="text-2xl font-bold text-gray-900 mb-2">
               {recipe.dishName || recipe.recipeName || 'Công thức'}
@@ -152,8 +144,8 @@ export default function CompleteRecipePage() {
           <form onSubmit={handleSaveAndContinue} className="space-y-6">
             {/* Ingredients List */}
             <div>
-              <label className="block text-sm font-semibold text-gray-900 mb-4">
-                Nguyên liệu *
+              <label className="block text-sm font-semibold text-orange-700 mb-4">
+                Nguyên liệu
               </label>
 
               {ingredients.length === 0 ? (
@@ -168,28 +160,28 @@ export default function CompleteRecipePage() {
                         placeholder="Tên nguyên liệu"
                         value={ingredient.name}
                         onChange={(e) => updateIngredient(ingredient.id, 'name', e.target.value)}
-                        className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent text-sm"
+                        className="flex-1 px-3 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent text-sm"
                       />
                       <input
                         type="text"
                         placeholder="Số lượng"
                         value={ingredient.quantity}
                         onChange={(e) => updateIngredient(ingredient.id, 'quantity', e.target.value)}
-                        className="w-24 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent text-sm"
+                        className="w-24 px-3 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent text-sm"
                       />
                       <input
                         type="text"
                         placeholder="Đơn vị"
                         value={ingredient.unit}
                         onChange={(e) => updateIngredient(ingredient.id, 'unit', e.target.value)}
-                        className="w-20 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent text-sm"
+                        className="w-20 px-3 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent text-sm"
                       />
                       <button
                         type="button"
                         onClick={() => removeIngredient(ingredient.id)}
-                        className="px-3 py-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors text-sm font-semibold"
+                        className="px-3 py-2 text-red-600 hover:bg-red-50 border-2 border-red-200 rounded-lg transition-colors text-sm font-semibold"
                       >
-                        ✕
+                        Xóa
                       </button>
                     </div>
                   ))}
@@ -199,9 +191,9 @@ export default function CompleteRecipePage() {
               <button
                 type="button"
                 onClick={addIngredient}
-                className="w-full px-4 py-2 border-2 border-dashed border-orange-300 text-orange-600 font-semibold rounded-lg hover:bg-orange-50 transition-colors text-sm"
+                className="w-full px-4 py-3 border-2 border-dashed border-orange-300 text-orange-700 font-bold rounded-xl hover:bg-orange-50 transition-all hover:scale-[1.02]"
               >
-                + Thêm nguyên liệu
+                Thêm nguyên liệu
               </button>
             </div>
 
@@ -213,26 +205,26 @@ export default function CompleteRecipePage() {
                   id="hasBrands"
                   checked={hasBrands}
                   onChange={(e) => setHasBrands(e.target.checked)}
-                  className="w-4 h-4 rounded border-gray-300 text-orange-600 focus:ring-orange-500"
+                  className="appearance-none w-5 h-5 bg-orange-50 border-2 border-orange-300 rounded-full focus:outline-none transition-all cursor-pointer hover:border-orange-400 checked:border-orange-500"
+                  style={{
+                    backgroundImage: hasBrands
+                      ? 'radial-gradient(circle, #f97316 35%, transparent 35%)'
+                      : 'none'
+                  }}
                 />
-                <label htmlFor="hasBrands" className="text-sm font-semibold text-gray-900 cursor-pointer">
-                  🏷️ Có hãng/thực phẩm quen thuộc
+                <label htmlFor="hasBrands" className="text-sm font-semibold text-orange-700 cursor-pointer">
+                  Có hãng/thực phẩm quen thuộc
                 </label>
               </div>
 
               {hasBrands && (
-                <div>
-                  <input
-                    type="text"
-                    value={brandsInput}
-                    onChange={(e) => setBrandsInput(e.target.value)}
-                    placeholder="Nhập hãng/thực phẩm, cách nhau bằng dấu phẩy&#10;VD: Ajinomoto, Maggi, Tôm tươi, Gà ta"
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent text-sm"
-                  />
-                  <p className="text-xs text-gray-500 mt-2">
-                    💡 Gợi ý: Nhập những hãng hoặc thực phẩm mà bạn thường dùng cho món này
-                  </p>
-                </div>
+                <input
+                  type="text"
+                  value={brandsInput}
+                  onChange={(e) => setBrandsInput(e.target.value)}
+                  placeholder="Nhập hãng/thực phẩm, cách nhau bằng dấu phẩy. VD: Ajinomoto, Maggi, Tôm tươi, Gà ta"
+                  className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent text-sm"
+                />
               )}
             </div>
 
@@ -244,10 +236,15 @@ export default function CompleteRecipePage() {
                   id="hasNotes"
                   checked={hasSpecialNotes}
                   onChange={(e) => setHasSpecialNotes(e.target.checked)}
-                  className="w-4 h-4 rounded border-gray-300 text-orange-600 focus:ring-orange-500"
+                  className="appearance-none w-5 h-5 bg-orange-50 border-2 border-orange-300 rounded-full focus:outline-none transition-all cursor-pointer hover:border-orange-400 checked:border-orange-500"
+                  style={{
+                    backgroundImage: hasSpecialNotes
+                      ? 'radial-gradient(circle, #f97316 35%, transparent 35%)'
+                      : 'none'
+                  }}
                 />
-                <label htmlFor="hasNotes" className="text-sm font-semibold text-gray-900 cursor-pointer">
-                  ✨ Có lưu ý đặc biệt từ người hướng dẫn
+                <label htmlFor="hasNotes" className="text-sm font-semibold text-orange-700 cursor-pointer">
+                  Có lưu ý đặc biệt từ người hướng dẫn
                 </label>
               </div>
 
@@ -257,13 +254,20 @@ export default function CompleteRecipePage() {
                   onChange={(e) => setSpecialNotes(e.target.value)}
                   placeholder="Nhập lưu ý đặc biệt, mẹo nấu, hoặc những điều cần chú ý..."
                   rows={4}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                  className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                 />
               )}
             </div>
 
             {/* Buttons */}
-            <div className="flex gap-3 justify-end pt-6">
+            <div className="space-y-3 pt-6">
+              <button
+                type="submit"
+                disabled={saving}
+                className="w-full p-4 bg-orange-100 hover:bg-orange-200 border-2 border-orange-300 rounded-xl transition-all hover:scale-[1.02] font-bold text-orange-700 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {saving ? 'Đang lưu...' : 'Tiếp tục thêm các bước nấu'}
+              </button>
               <button
                 type="button"
                 onClick={async () => {
@@ -279,33 +283,14 @@ export default function CompleteRecipePage() {
                   }
                   router.push('/recipes');
                 }}
-                className="px-6 py-3 bg-gray-100 text-gray-700 font-semibold rounded-lg hover:bg-gray-200 transition-colors"
+                className="w-full p-3 bg-gray-50 hover:bg-gray-100 border-2 border-gray-200 rounded-xl transition-all hover:scale-[1.02] font-bold text-gray-700 text-sm"
               >
                 Lưu và tiếp tục sau
               </button>
-              <GradientButton
-                type="submit"
-                disabled={saving}
-              >
-                {saving ? 'Đang lưu...' : 'Tiếp tục thêm các bước nấu'}
-              </GradientButton>
             </div>
           </form>
         </div>
-
-        {/* Info Box */}
-        <div className="mt-8 bg-gradient-to-r from-orange-50 to-amber-50 rounded-xl border border-orange-200 p-6">
-          <div className="flex gap-4">
-            <div className="text-2xl">💡</div>
-            <div>
-              <p className="font-semibold text-gray-900 mb-1">Bước tiếp theo:</p>
-              <p className="text-sm text-gray-700">
-                Sau khi hoàn chỉnh nguyên liệu, bạn có thể tiếp tục thêm hướng dẫn nấu và bí kíp riêng của mình
-              </p>
-            </div>
-          </div>
-        </div>
       </main>
-    </PageContainer>
+    </div>
   );
 }

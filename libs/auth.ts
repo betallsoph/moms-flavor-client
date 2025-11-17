@@ -1,13 +1,16 @@
 // Firebase authentication service
-import { 
-  signInWithEmailAndPassword, 
+import {
+  signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
   signInWithPopup,
   GoogleAuthProvider,
   signOut,
   onAuthStateChanged as firebaseOnAuthStateChanged,
   updateProfile,
-  User as FirebaseUser
+  User as FirebaseUser,
+  RecaptchaVerifier,
+  signInWithPhoneNumber,
+  ConfirmationResult
 } from 'firebase/auth';
 import { doc, setDoc, getDoc } from 'firebase/firestore';
 import { auth, db } from './firebase';
@@ -74,6 +77,42 @@ export const authService = {
     const userCredential = await signInWithPopup(auth, provider);
     await ensureUserDocument(userCredential.user);
     // Load user data from Firestore
+    return authService.getUserData(userCredential.user.uid);
+  },
+
+  // Phone authentication - Setup RecaptchaVerifier
+  setupRecaptcha: (containerId: string): RecaptchaVerifier => {
+    // Clear any existing reCAPTCHA widget first
+    const container = document.getElementById(containerId);
+    if (container) {
+      container.innerHTML = '';
+    }
+
+    const recaptchaVerifier = new RecaptchaVerifier(auth, containerId, {
+      size: 'invisible',
+      callback: () => {
+        console.log('reCAPTCHA verified successfully');
+      },
+      'expired-callback': () => {
+        console.log('reCAPTCHA expired');
+      },
+    });
+
+    // Render the reCAPTCHA widget
+    recaptchaVerifier.render();
+
+    return recaptchaVerifier;
+  },
+
+  // Phone authentication - Send verification code
+  sendPhoneVerification: async (phoneNumber: string, recaptchaVerifier: RecaptchaVerifier): Promise<ConfirmationResult> => {
+    return await signInWithPhoneNumber(auth, phoneNumber, recaptchaVerifier);
+  },
+
+  // Phone authentication - Verify code and login
+  verifyPhoneCode: async (confirmationResult: ConfirmationResult, code: string): Promise<User> => {
+    const userCredential = await confirmationResult.confirm(code);
+    await ensureUserDocument(userCredential.user);
     return authService.getUserData(userCredential.user.uid);
   },
 

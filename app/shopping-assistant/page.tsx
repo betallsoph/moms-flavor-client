@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { PageContainer, PageHeader, LoadingSpinner, GradientButton } from '@/components/ui';
+import { LoadingSpinner } from '@/components/ui';
 
 interface ShoppingItem {
   id: string;
@@ -15,19 +15,20 @@ interface ShoppingItem {
 }
 
 const CATEGORIES = {
-  'rau-cu': { name: '🥬 Rau - Củ', color: 'border-green-200 bg-green-50' },
-  'thit-ca': { name: '🥩 Thịt - Cá', color: 'border-red-200 bg-red-50' },
-  'gia-vi': { name: '🧂 Gia vị', color: 'border-yellow-200 bg-yellow-50' },
-  'khac': { name: '📦 Khác', color: 'border-gray-200 bg-gray-50' },
+  'rau-cu': { name: 'Rau - Củ', emoji: '🥬' },
+  'thit-ca': { name: 'Thịt - Cá', emoji: '🥩' },
+  'gia-vi': { name: 'Gia vị', emoji: '🧂' },
+  'khac': { name: 'Khác', emoji: '📦' },
 };
 
 export default function ShoppingAssistantPage() {
   const router = useRouter();
   const [items, setItems] = useState<ShoppingItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showAddForm, setShowAddForm] = useState(false);
   const [newItemName, setNewItemName] = useState('');
   const [newItemQuantity, setNewItemQuantity] = useState('1');
-  const [newItemUnit, setNewItemUnit] = useState('cái');
+  const [newItemUnit, setNewItemUnit] = useState('');
   const [newItemCategory, setNewItemCategory] = useState<'rau-cu' | 'thit-ca' | 'gia-vi' | 'khac'>('khac');
 
   const loadItems = () => {
@@ -62,8 +63,9 @@ export default function ShoppingAssistantPage() {
     saveItems([...items, newItem]);
     setNewItemName('');
     setNewItemQuantity('1');
-    setNewItemUnit('cái');
+    setNewItemUnit('');
     setNewItemCategory('khac');
+    setShowAddForm(false);
   };
 
   const handleToggleItem = (id: string) => {
@@ -81,12 +83,6 @@ export default function ShoppingAssistantPage() {
     saveItems(items.filter((item) => !item.checked));
   };
 
-  const handleClearAll = () => {
-    if (confirm('Xóa toàn bộ danh sách?')) {
-      saveItems([]);
-    }
-  };
-
   // Group items by category
   const itemsByCategory = Object.keys(CATEGORIES).reduce((acc, category) => {
     acc[category as keyof typeof CATEGORIES] = items.filter((item) => item.category === category);
@@ -94,158 +90,141 @@ export default function ShoppingAssistantPage() {
   }, {} as Record<keyof typeof CATEGORIES, ShoppingItem[]>);
 
   const checkedCount = items.filter((item) => item.checked).length;
+  const progress = items.length > 0 ? (checkedCount / items.length) * 100 : 0;
 
   if (loading) {
     return <LoadingSpinner />;
   }
 
   return (
-    <PageContainer>
-      <PageHeader
-        icon="🛒"
-        title="Trợ lý đi chợ"
-        backButton={{
-          label: 'Quay lại trang chủ',
-          onClick: () => router.push('/home'),
-        }}
-      />
+    <div className="min-h-screen bg-gray-50">
+      {/* Floating Back Button - Moved higher */}
+      <button
+        onClick={() => router.push('/home')}
+        className="fixed top-4 left-4 z-50 w-10 h-10 rounded-full bg-white border border-gray-200 shadow-sm flex items-center justify-center text-gray-600 hover:bg-gray-50 hover:scale-105 transition-all"
+        aria-label="Quay lại trang chủ"
+      >
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+        </svg>
+      </button>
 
-      <main className="max-w-4xl mx-auto px-6 py-12">
-        {/* Info Note */}
-        <div className="mb-8 p-4 bg-blue-50 border border-blue-200 rounded-xl">
-          <p className="text-xs text-blue-900">
-            ℹ️ ân sẽ tuning một model của naver để nó trả về chỉ mỗi danh sách đi chợ thôi, và giới hạn đầu vào cho nó trả lời đúng dựa trên các công thức đã có
-          </p>
-        </div>
-        {/* Progress Bar */}
-        {items.length > 0 && (
-          <div className="mb-8 p-6 bg-gradient-to-r from-blue-50 to-cyan-50 rounded-xl border border-blue-200">
-            <div className="flex items-center justify-between mb-3">
-              <p className="font-semibold text-gray-900">
-                ✓ Đã mua {checkedCount}/{items.length} mục
-              </p>
-              <span className="text-2xl font-bold text-blue-600">
-                {Math.round((checkedCount / items.length) * 100)}%
-              </span>
+      {/* Main Content */}
+      <main className="max-w-2xl mx-auto px-6 py-12 pb-32">
+        {/* Cute Header */}
+        <div className="mb-12">
+          <div className="flex items-start gap-3 mb-4">
+            <div className="flex-shrink-0">
+              <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center shadow-sm">
+                <span className="text-2xl">🛒</span>
+              </div>
             </div>
-            <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
+            <div className="flex-1 min-w-0">
+              <div className="flex items-baseline gap-2 mb-1">
+                <h1 className="text-2xl font-bold text-gray-900">Danh sách mua sắm</h1>
+                {items.length > 0 && (
+                  <div className="flex items-center gap-1.5 text-sm text-gray-400">
+                    <span className="font-semibold text-gray-900">{checkedCount}</span>
+                    <span>/</span>
+                    <span>{items.length}</span>
+                  </div>
+                )}
+              </div>
+              <p className="text-sm text-gray-500">Ghi chép thật nhanh, mua sắm thật vui</p>
+            </div>
+          </div>
+          {items.length > 0 && (
+            <div className="relative h-1.5 bg-gray-200 rounded-full overflow-hidden">
               <div
-                className="bg-gradient-to-r from-blue-600 to-cyan-600 h-full transition-all duration-300"
-                style={{ width: `${(checkedCount / items.length) * 100}%` }}
+                className="absolute h-full bg-gradient-to-r from-gray-800 to-gray-900 rounded-full transition-all duration-500 ease-out"
+                style={{ width: `${progress}%` }}
               />
+              {progress > 0 && progress < 100 && (
+                <div
+                  className="absolute h-full w-2 bg-white/50 rounded-full blur-sm"
+                  style={{ left: `${progress}%`, transform: 'translateX(-50%)' }}
+                />
+              )}
             </div>
-          </div>
-        )}
-
-        {/* Add Item Form */}
-        <div className="bg-white rounded-2xl shadow-lg border border-blue-100 p-8 mb-8">
-          <h2 className="text-xl font-bold text-gray-900 mb-6">Thêm mục mới</h2>
-          <div className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <input
-                type="text"
-                value={newItemName}
-                onChange={(e) => setNewItemName(e.target.value)}
-                placeholder="Tên mục (ví dụ: Cà chua)"
-                className="col-span-1 md:col-span-2 px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-base"
-                onKeyPress={(e) => e.key === 'Enter' && handleAddItem()}
-              />
-              <select
-                value={newItemCategory}
-                onChange={(e) => setNewItemCategory(e.target.value as any)}
-                className="px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-base"
-              >
-                {Object.entries(CATEGORIES).map(([key, val]) => (
-                  <option key={key} value={key}>
-                    {val.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <input
-                type="number"
-                value={newItemQuantity}
-                onChange={(e) => setNewItemQuantity(e.target.value)}
-                placeholder="Số lượng"
-                min="1"
-                className="px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-base"
-              />
-              <input
-                type="text"
-                value={newItemUnit}
-                onChange={(e) => setNewItemUnit(e.target.value)}
-                placeholder="Đơn vị (cái, kg, lít...)"
-                className="col-span-1 md:col-span-2 px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-base"
-              />
-            </div>
-
-            <button
-              onClick={handleAddItem}
-              className="w-full bg-gradient-to-r from-blue-600 to-cyan-600 text-white font-semibold py-3 px-6 rounded-lg hover:shadow-lg transition-shadow"
-            >
-              + Thêm vào danh sách
-            </button>
-          </div>
+          )}
         </div>
 
         {/* Shopping List */}
         {items.length === 0 ? (
-          <div className="bg-white rounded-2xl shadow-lg border border-blue-100 p-12 text-center">
-            <div className="max-w-md mx-auto">
-              <div className="w-24 h-24 bg-gradient-to-br from-blue-100 to-cyan-100 rounded-full flex items-center justify-center mx-auto mb-6">
-                <span className="text-5xl">🛒</span>
-              </div>
-              <h3 className="text-2xl font-semibold text-gray-900 mb-3">
-                Danh sách trống
-              </h3>
-              <p className="text-gray-500 mb-8">
-                Hãy thêm những mục bạn cần mua từ trên!
-              </p>
-            </div>
+          <div className="text-center py-20">
+            <div className="text-5xl mb-4 opacity-40">🛒</div>
+            <p className="text-gray-400 text-base">Chưa có gì trong danh sách</p>
           </div>
         ) : (
-          <div className="space-y-6">
+          <div className="space-y-8 mb-8">
             {Object.entries(CATEGORIES).map(([categoryKey, categoryInfo]) => {
               const categoryItems = itemsByCategory[categoryKey as keyof typeof CATEGORIES];
               if (categoryItems.length === 0) return null;
 
               return (
-                <div key={categoryKey} className={`rounded-2xl border p-6 ${categoryInfo.color}`}>
-                  <h3 className="text-lg font-bold text-gray-900 mb-4">{categoryInfo.name}</h3>
-                  <div className="space-y-3">
-                    {categoryItems.map((item) => (
+                <div key={categoryKey} className="space-y-3">
+                  {/* Category Header - Minimal */}
+                  <div className="flex items-center gap-2 px-1">
+                    <span className="text-xl opacity-70">{categoryInfo.emoji}</span>
+                    <h3 className="text-sm font-medium text-gray-600">
+                      {categoryInfo.name}
+                    </h3>
+                    <div className="ml-auto text-xs text-gray-400">
+                      {categoryItems.length}
+                    </div>
+                  </div>
+
+                  {/* Category Items - Minimal white cards */}
+                  <div className="space-y-2">
+                    {categoryItems.map((item, index) => (
                       <div
                         key={item.id}
-                        className="flex items-center gap-3 bg-white rounded-lg p-4 hover:shadow-md transition-shadow"
+                        className={`group relative bg-white border border-gray-200 rounded-xl p-4 transition-all hover:shadow-md hover:border-gray-300 ${
+                          item.checked ? 'opacity-50' : ''
+                        }`}
+                        style={{
+                          animation: `slideInUp 0.3s ease-out ${index * 0.05}s backwards`,
+                        }}
                       >
-                        <input
-                          type="checkbox"
-                          checked={item.checked}
-                          onChange={() => handleToggleItem(item.id)}
-                          className="w-5 h-5 text-blue-600 rounded cursor-pointer"
-                        />
-                        <div className="flex-1">
-                          <p
-                            className={`font-semibold ${
+                        <div className="flex items-center gap-3">
+                          {/* Checkbox - Minimal */}
+                          <button
+                            onClick={() => handleToggleItem(item.id)}
+                            className={`flex-shrink-0 w-5 h-5 rounded-full border-2 ${
                               item.checked
-                                ? 'line-through text-gray-400'
-                                : 'text-gray-900'
-                            }`}
+                                ? 'border-gray-900 bg-gray-900'
+                                : 'border-gray-300 bg-white'
+                            } flex items-center justify-center transition-all hover:scale-110`}
                           >
-                            {item.name}
-                          </p>
-                          <p className="text-sm text-gray-500">
-                            {item.quantity} {item.unit}
-                          </p>
+                            {item.checked && (
+                              <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                              </svg>
+                            )}
+                          </button>
+
+                          {/* Item Info */}
+                          <div className="flex-1 min-w-0">
+                            <p className={`font-medium text-gray-900 ${item.checked ? 'line-through' : ''}`}>
+                              {item.name}
+                            </p>
+                            {(item.quantity || item.unit) && (
+                              <p className="text-sm text-gray-400 mt-0.5">
+                                {item.quantity} {item.unit}
+                              </p>
+                            )}
+                          </div>
+
+                          {/* Delete Button */}
+                          <button
+                            onClick={() => handleDeleteItem(item.id)}
+                            className="opacity-0 group-hover:opacity-100 flex-shrink-0 w-7 h-7 rounded-full bg-gray-100 text-gray-600 flex items-center justify-center transition-all hover:bg-gray-200"
+                          >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                          </button>
                         </div>
-                        <button
-                          onClick={() => handleDeleteItem(item.id)}
-                          className="text-red-600 hover:text-red-700 font-semibold text-sm px-3 py-1"
-                        >
-                          Xóa
-                        </button>
                       </div>
                     ))}
                   </div>
@@ -255,26 +234,173 @@ export default function ShoppingAssistantPage() {
           </div>
         )}
 
-        {/* Action Buttons */}
-        {items.length > 0 && (
-          <div className="mt-12 flex gap-4 justify-center">
-            {checkedCount > 0 && (
-              <button
-                onClick={handleClearCompleted}
-                className="px-6 py-3 bg-gray-200 text-gray-900 font-semibold rounded-lg hover:bg-gray-300 transition-colors"
-              >
-                🗑️ Xóa những mục đã mua
-              </button>
-            )}
+        {/* Clear Completed Button */}
+        {checkedCount > 0 && (
+          <div className="text-center">
             <button
-              onClick={handleClearAll}
-              className="px-6 py-3 bg-red-100 text-red-600 font-semibold rounded-lg hover:bg-red-200 transition-colors"
+              onClick={handleClearCompleted}
+              className="inline-flex items-center gap-2 px-5 py-2.5 bg-white text-gray-600 rounded-full border border-gray-200 text-sm font-medium hover:bg-gray-50 hover:border-gray-300 transition-all"
             >
-              🗑️ Xóa toàn bộ
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+              </svg>
+              <span>Xoá đã mua ({checkedCount})</span>
             </button>
           </div>
         )}
       </main>
-    </PageContainer>
+
+      {/* Floating Add Button - Minimal */}
+      <div className="fixed bottom-8 right-8 z-50">
+        <button
+          onClick={() => setShowAddForm(!showAddForm)}
+          className={`w-14 h-14 rounded-full bg-gray-900 text-white shadow-lg flex items-center justify-center transition-all hover:scale-105 hover:shadow-xl ${
+            showAddForm ? 'rotate-45' : ''
+          }`}
+        >
+          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+          </svg>
+        </button>
+      </div>
+
+      {/* Add Item Modal - Minimal */}
+      {showAddForm && (
+        <div className="fixed inset-0 z-40 flex items-end justify-center sm:items-center p-4">
+          {/* Backdrop */}
+          <div
+            className="absolute inset-0 bg-black/10 backdrop-blur-sm"
+            onClick={() => setShowAddForm(false)}
+          />
+
+          {/* Modal */}
+          <div className="relative w-full max-w-lg bg-white rounded-2xl shadow-xl border border-gray-200 p-6 sm:p-8 animate-slideUp">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-xl font-semibold text-gray-900">Thêm món mới</h2>
+              <button
+                onClick={() => setShowAddForm(false)}
+                className="w-8 h-8 rounded-full bg-gray-100 text-gray-600 flex items-center justify-center hover:bg-gray-200 transition-colors"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              {/* Item Name */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Tên món</label>
+                <input
+                  type="text"
+                  value={newItemName}
+                  onChange={(e) => setNewItemName(e.target.value)}
+                  placeholder="Cà chua"
+                  className="w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent transition-all"
+                  autoFocus
+                  onKeyPress={(e) => e.key === 'Enter' && handleAddItem()}
+                />
+              </div>
+
+              {/* Category Selector */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Loại</label>
+                <div className="grid grid-cols-2 gap-2">
+                  {Object.entries(CATEGORIES).map(([key, val]) => (
+                    <button
+                      key={key}
+                      onClick={() => setNewItemCategory(key as any)}
+                      className={`flex items-center gap-2 px-4 py-3 rounded-lg border transition-all ${
+                        newItemCategory === key
+                          ? 'bg-gray-900 border-gray-900 text-white'
+                          : 'bg-white border-gray-200 text-gray-700 hover:bg-gray-50'
+                      }`}
+                    >
+                      <span className="text-lg">{val.emoji}</span>
+                      <span className="text-sm font-medium">{val.name}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Quantity & Unit */}
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Số lượng</label>
+                  <input
+                    type="text"
+                    value={newItemQuantity}
+                    onChange={(e) => setNewItemQuantity(e.target.value)}
+                    placeholder="1"
+                    className="w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Đơn vị</label>
+                  <input
+                    type="text"
+                    value={newItemUnit}
+                    onChange={(e) => setNewItemUnit(e.target.value)}
+                    placeholder="kg"
+                    className="w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent"
+                  />
+                </div>
+              </div>
+
+              {/* Add Button */}
+              <button
+                onClick={handleAddItem}
+                disabled={!newItemName.trim()}
+                className="w-full py-3.5 bg-gray-900 text-white font-medium rounded-lg hover:bg-gray-800 transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-gray-900"
+              >
+                Thêm vào danh sách
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Custom Animations */}
+      <style jsx global>{`
+        @keyframes slideInUp {
+          from {
+            opacity: 0;
+            transform: translateY(10px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+
+        @keyframes slideUp {
+          from {
+            opacity: 0;
+            transform: translateY(20px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+
+        @keyframes bounce-slow {
+          0%, 100% {
+            transform: translateY(0);
+          }
+          50% {
+            transform: translateY(-10px);
+          }
+        }
+
+        .animate-slideUp {
+          animation: slideUp 0.3s ease-out;
+        }
+
+        .animate-bounce-slow {
+          animation: bounce-slow 2s ease-in-out infinite;
+        }
+      `}</style>
+    </div>
   );
 }

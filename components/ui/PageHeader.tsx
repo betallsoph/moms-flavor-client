@@ -17,17 +17,17 @@ export default function PageHeader({
   title,
   backButton,
   rightContent,
-  iconBgColor = 'from-orange-400 to-amber-500',
-  titleGradient = 'from-orange-600 to-amber-600',
+  iconBgColor,
+  titleGradient,
 }: Props) {
   return (
-    <header className="border-b border-orange-100 bg-white/80 backdrop-blur-sm sticky top-0 z-50">
+    <header className="border-b border-gray-200 bg-white/80 backdrop-blur-lg sticky top-0 z-50 shadow-sm">
       <div className="max-w-6xl mx-auto px-6 py-4">
         <div className="flex items-center justify-between">
           {backButton ? (
             <button
               onClick={backButton.onClick}
-              className="flex items-center gap-2 px-4 py-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
+              className="flex items-center gap-2 px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition-all duration-200"
             >
               <span className="text-xl">←</span>
               <span className="text-sm font-medium">{backButton.label}</span>
@@ -35,14 +35,14 @@ export default function PageHeader({
           ) : (
             <div className="w-40"></div>
           )}
-          
+
           <div className="flex items-center gap-3">
             {icon && (
-              <div className={`w-10 h-10 bg-gradient-to-br ${iconBgColor} rounded-xl flex items-center justify-center shadow-sm`}>
-                <span className="text-white text-xl">{icon}</span>
+              <div className="w-12 h-12 bg-gray-100 rounded-xl flex items-center justify-center shadow-sm">
+                <span className="text-2xl">{icon}</span>
               </div>
             )}
-            <h1 className={`text-xl font-bold bg-gradient-to-r ${titleGradient} bg-clip-text text-transparent`}>
+            <h1 className="text-2xl font-bold text-gray-900">
               {title}
             </h1>
           </div>

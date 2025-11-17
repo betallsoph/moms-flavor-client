@@ -2,15 +2,19 @@ import React from 'react';
 
 type Props = {
   children: React.ReactNode;
-  gradient?: string;
+  variant?: 'white' | 'light-gray';
 };
 
-export default function PageContainer({ 
-  children, 
-  gradient = 'from-orange-50 via-white to-amber-50' 
+export default function PageContainer({
+  children,
+  variant = 'white'
 }: Props) {
+  const bgClass = variant === 'light-gray'
+    ? 'bg-gray-50'
+    : 'bg-white';
+
   return (
-    <div className={`min-h-screen bg-gradient-to-br ${gradient}`}>
+    <div className={`min-h-screen ${bgClass} relative`}>
       {children}
     </div>
   );

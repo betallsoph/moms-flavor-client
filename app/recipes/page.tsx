@@ -11,12 +11,25 @@ export default function RecipesPage() {
   const router = useRouter();
   const [recipes, setRecipes] = useState<Recipe[]>([]);
   const [loading, setLoading] = useState(true);
+  const [selectedInstructor, setSelectedInstructor] = useState<string>('');
 
   const loadRecipes = async () => {
     const data = await RecipeService.getAll();
     setRecipes(data);
     setLoading(false);
   };
+
+  // Get unique instructors
+  const instructors = recipes
+    .map(r => r.instructor)
+    .filter((instructor): instructor is string => !!instructor && instructor.trim() !== '')
+    .filter((value, index, self) => self.indexOf(value) === index)
+    .sort();
+
+  // Filter recipes by selected instructor
+  const filteredRecipes = selectedInstructor === '' || selectedInstructor === 'all'
+    ? recipes
+    : recipes.filter(r => r.instructor === selectedInstructor);
 
   useEffect(() => {
     loadRecipes();
@@ -70,51 +83,127 @@ export default function RecipesPage() {
         onConfirm={confirmDelete}
         onCancel={cancelDelete}
       />
-      <PageHeader
-        icon="📚"
-        title="Danh sách công thức"
-        backButton={{
-          label: 'Quay lại trang chủ',
-          onClick: () => router.push('/home'),
-        }}
-      />
 
       {/* Main Content */}
       <main className="max-w-6xl mx-auto px-6 py-12">
         {loading ? (
           <LoadingSpinner message="Đang tải công thức..." />
         ) : recipes.length === 0 ? (
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-12 text-center">
+          <div className="bg-gray-50 border border-gray-200 rounded-2xl p-12 text-center shadow-sm">
             <div className="max-w-md mx-auto">
-              <div className="w-24 h-24 bg-gradient-to-br from-orange-100 to-amber-100 rounded-full flex items-center justify-center mx-auto mb-6">
+              <div className="w-24 h-24 bg-gradient-to-br from-green-100 to-emerald-100 rounded-full flex items-center justify-center mx-auto mb-6 shadow-md">
                 <span className="text-5xl">📖</span>
               </div>
               <h3 className="text-2xl font-semibold text-gray-900 mb-3">
                 Chưa có công thức nào
               </h3>
-              <p className="text-gray-500 mb-8">
+              <p className="text-gray-600 mb-8">
                 Hãy tạo công thức đầu tiên của bạn!
               </p>
-              <GradientButton onClick={() => router.push('/recipes/new')}>
-                Thêm công thức đầu tiên
-              </GradientButton>
+              <div className="space-y-3">
+                <button
+                  onClick={() => router.push('/recipes/new')}
+                  className="w-full max-w-sm mx-auto block p-4 bg-green-100 hover:bg-green-200 border-2 border-green-300 rounded-xl transition-all hover:scale-[1.02] font-bold text-green-700"
+                >
+                  Thêm công thức đầu tiên
+                </button>
+
+                <button
+                  onClick={() => router.push('/home')}
+                  className="w-full max-w-sm mx-auto block p-3 bg-gray-50 hover:bg-gray-100 border-2 border-gray-200 rounded-xl transition-all hover:scale-[1.02] font-bold text-gray-700 text-sm"
+                >
+                  Quay lại trang chủ
+                </button>
+              </div>
             </div>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {recipes.map((recipe) => (
+          <>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {/* Filter Dropdown and Back to Home Button - Spans all columns */}
+            <div className="col-span-full grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-2">
+              {instructors.length > 0 && (
+                <div className="relative md:col-span-1 lg:col-span-2">
+                  <style jsx>{`
+                    #instructor-filter option {
+                      padding: 12px 16px;
+                      font-weight: 600;
+                      font-size: 18px;
+                      background-color: #f0fdf4;
+                      color: #15803d;
+                    }
+                    #instructor-filter option:hover {
+                      background-color: #dcfce7;
+                    }
+                    #instructor-filter option:checked {
+                      background-color: #bbf7d0;
+                      color: #166534;
+                    }
+                  `}</style>
+                  <select
+                    id="instructor-filter"
+                    value={selectedInstructor}
+                    onChange={(e) => setSelectedInstructor(e.target.value)}
+                    className="w-full h-full px-4 py-4 pr-10 border-2 border-green-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 text-xl font-bold text-green-700 bg-gradient-to-r from-green-50 to-emerald-50 appearance-none cursor-pointer transition-all hover:border-green-400 shadow-sm"
+                    style={{
+                      backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2316a34a'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='3' d='M19 9l-7 7-7-7'/%3E%3C/svg%3E")`,
+                      backgroundRepeat: 'no-repeat',
+                      backgroundPosition: 'right 0.75rem center',
+                      backgroundSize: '1.5em 1.5em',
+                    }}
+                  >
+                    <option value="" disabled>Chọn người hướng dẫn cụ thể ở đây!</option>
+                    <option value="all">Tất cả</option>
+                    {instructors.map((instructor) => (
+                      <option key={instructor} value={instructor}>
+                        {instructor}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
+
+              {/* Back to Home Button */}
+              <button
+                onClick={() => router.push('/home')}
+                className="w-full px-6 py-4 bg-gray-50 hover:bg-gray-100 border-2 border-gray-200 rounded-xl transition-all hover:scale-[1.02] font-bold text-gray-700 text-lg md:col-span-1 lg:col-span-1"
+              >
+                Quay lại trang chủ
+              </button>
+            </div>
+
+            {/* Add Recipe Card */}
+            <div
+              onClick={() => router.push('/recipes/new')}
+              className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-2xl shadow-md border-2 border-dashed border-green-300 overflow-hidden transition-all duration-300 cursor-pointer hover:border-green-500 hover:shadow-xl hover:scale-[1.02] hover:-translate-y-1 flex items-center justify-center h-[280px]"
+            >
+              <div className="text-center p-8">
+                <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                  </svg>
+                </div>
+                <p className="font-bold text-green-700 text-lg">Thêm công thức mới</p>
+              </div>
+            </div>
+
+            {filteredRecipes.map((recipe) => (
               <div
                 key={recipe.id}
-                className="bg-white rounded-xl shadow-md hover:shadow-lg border border-orange-100 hover:border-orange-300 overflow-hidden transition-all group cursor-default"
+                onClick={() => {
+                  localStorage.setItem('selectedRecipe', JSON.stringify(recipe));
+                  router.push(`/recipes/${recipe.id}`);
+                }}
+                className="bg-white rounded-2xl shadow-md border-2 border-green-200 overflow-hidden transition-all duration-300 group cursor-pointer hover:border-green-400 hover:shadow-xl hover:scale-[1.02] hover:-translate-y-1 flex flex-col h-[280px]"
               >
                 {/* Card Header */}
-                <div className="bg-gradient-to-r from-orange-100 to-amber-100 px-6 py-4 border-b border-orange-200">
-                  <h3 className="text-lg font-bold text-gray-900 mb-2 line-clamp-1">
+                <div className="bg-gradient-to-r from-green-50 to-emerald-50 px-5 py-3 border-b border-green-200">
+                  <h3 className="text-xl font-bold text-gray-900 mb-1 line-clamp-1">
                     {recipe.dishName}
                   </h3>
-                  <div className="flex flex-wrap gap-2 items-center text-sm text-gray-600">
+                  <div className="flex flex-wrap gap-2 items-center text-sm">
                     {recipe.instructor && (
-                      <span className="flex items-center gap-1 bg-orange-100 text-orange-700 px-2 py-1 rounded-full text-xs font-medium">
+                      <span className="flex items-center gap-1 bg-green-100 text-green-700 px-2 py-1 rounded-full text-sm font-medium">
                         👤 {recipe.instructor}
                       </span>
                     )}
@@ -122,12 +211,12 @@ export default function RecipesPage() {
                 </div>
 
                 {/* Card Body */}
-                <div className="px-6 py-4 space-y-3">
+                <div className="px-5 py-3 space-y-2 flex-1 overflow-hidden">
                   {/* Difficulty & Cooking Time */}
-                  <div className="space-y-2">
+                  <div className="space-y-1">
                     <div className="flex items-center gap-2">
                       <span className="text-sm font-semibold text-gray-700">Độ khó:</span>
-                      <span className="text-xs text-gray-600">
+                      <span className="text-sm text-gray-600">
                         {recipe.difficulty === 'very_easy' && '⭐ Rất dễ'}
                         {recipe.difficulty === 'easy' && '⭐⭐ Dễ'}
                         {recipe.difficulty === 'medium' && '⭐⭐⭐ Trung bình'}
@@ -137,7 +226,7 @@ export default function RecipesPage() {
                     </div>
                     <div className="flex items-center gap-2">
                       <span className="text-sm font-semibold text-gray-700">Thời gian:</span>
-                      <span className="text-xs text-gray-600">
+                      <span className="text-sm text-gray-600">
                         {recipe.cookingTime === 'very_fast' && '⚡ Rất nhanh'}
                         {recipe.cookingTime === 'fast' && '⏱️ Nhanh'}
                         {recipe.cookingTime === 'medium' && '🕐 Trung bình'}
@@ -148,60 +237,17 @@ export default function RecipesPage() {
                   </div>
 
                   {/* Description Preview */}
-                  <div>
-                    <h4 className="text-sm font-semibold text-gray-700 mb-2">Mô tả:</h4>
-                    <p className="text-sm text-gray-600 line-clamp-3">
+                  <div className="overflow-hidden">
+                    <h4 className="text-sm font-semibold text-gray-700 mb-1">Mô tả:</h4>
+                    <p className="text-sm text-gray-600 line-clamp-4">
                       {recipe.description}
                     </p>
                   </div>
                 </div>
-
-                {/* Card Footer */}
-                <div className="px-6 py-4 border-t border-gray-100 flex gap-2">
-                  <button
-                    onClick={() => {
-                      // Store selected recipe and navigate to detail view
-                      localStorage.setItem('selectedRecipe', JSON.stringify(recipe));
-                      router.push(`/recipes/${recipe.id}`);
-                    }}
-                    className="flex-1 bg-orange-600 text-white font-semibold py-2 rounded-lg hover:bg-orange-700 transition-colors text-sm"
-                  >
-                    Xem chi tiết
-                  </button>
-                  <button
-                    onClick={() => handleDelete(recipe.id)}
-                    className="flex-1 bg-red-100 text-red-600 font-semibold py-2 rounded-lg hover:bg-red-200 transition-colors text-sm"
-                  >
-                    Xóa
-                  </button>
-                </div>
               </div>
             ))}
           </div>
-        )}
-
-        {/* Add Recipe Button (Floating) */}
-        {recipes.length > 0 && (
-          <div className="mt-12">
-            <div className="text-center mb-8">
-              <GradientButton onClick={() => router.push('/recipes/new')}>
-                <span>➕</span>
-                <span className="ml-2">Thêm công thức mới</span>
-              </GradientButton>
-            </div>
-
-            {/* Suggestion Card */}
-            <div className="max-w-2xl mx-auto bg-gradient-to-br from-blue-50 to-indigo-50 rounded-2xl border-2 border-dashed border-blue-300 p-8">
-              <div className="flex gap-4">
-                <div className="text-4xl">💡</div>
-                <div>
-                  <p className="text-gray-700 leading-relaxed">
-                    Ở trang này có thể thêm một thanh tìm kiếm, và chia người chỉ công thức nấu ra sao cho nhìn dễ hơn thay vì gắn tag như hiện tại nhỉ?...
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
+          </>
         )}
       </main>
     </PageContainer>

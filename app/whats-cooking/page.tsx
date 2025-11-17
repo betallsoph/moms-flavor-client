@@ -71,15 +71,15 @@ export default function WhatsCookingPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50">
-      {/* Header - Simple, no back button */}
-      <header className="border-b border-blue-100 bg-white/80 backdrop-blur-sm sticky top-0 z-50">
+    <div className="min-h-screen bg-white relative">
+      {/* Header */}
+      <header className="border-b border-gray-200 bg-white/80 backdrop-blur-lg sticky top-0 z-50 shadow-sm">
         <div className="max-w-6xl mx-auto px-6 py-4">
           <div className="flex items-center justify-center gap-3">
-            <div className="w-10 h-10 bg-gradient-to-br from-blue-400 to-indigo-500 rounded-xl flex items-center justify-center shadow-sm">
-              <span className="text-white text-xl">🎨</span>
+            <div className="w-12 h-12 bg-gradient-to-br from-blue-100 to-indigo-100 rounded-xl flex items-center justify-center shadow-md">
+              <span className="text-2xl">🎨</span>
             </div>
-            <h1 className="text-xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
+            <h1 className="text-2xl font-bold text-gray-900">
               Hôm nay nấu gì?
             </h1>
           </div>
@@ -88,12 +88,12 @@ export default function WhatsCookingPage() {
 
       {/* Main Content */}
       <main className="max-w-6xl mx-auto px-6 py-12">
-        <div className="bg-white rounded-2xl shadow-lg border border-blue-100 p-12">
+        <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-3xl shadow-lg border-2 border-blue-200 p-12">
           <div className="max-w-4xl mx-auto">
-            <div className="w-32 h-32 bg-gradient-to-br from-blue-100 to-indigo-100 rounded-full flex items-center justify-center mx-auto mb-8">
+            <div className="w-32 h-32 bg-gradient-to-br from-blue-100 to-indigo-100 rounded-full flex items-center justify-center mx-auto mb-8 shadow-lg">
               <span className="text-6xl">🎯</span>
             </div>
-            
+
             <h2 className="text-3xl font-bold text-gray-900 mb-6 text-center">
               Gợi ý hôm nay
             </h2>
@@ -102,10 +102,10 @@ export default function WhatsCookingPage() {
             <div className="flex justify-center gap-3 mb-8">
               <button
                 onClick={() => setShowMode('random')}
-                className={`flex items-center gap-2 px-6 py-3 rounded-xl font-semibold transition-all ${
+                className={`flex items-center gap-2 px-6 py-3 rounded-xl font-semibold transition-all duration-300 ${
                   showMode === 'random'
-                    ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-lg'
-                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                    ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-lg scale-105'
+                    : 'bg-white text-gray-700 border-2 border-gray-200 hover:border-blue-300 hover:bg-blue-50'
                 }`}
               >
                 <span>🎲</span>
@@ -113,10 +113,10 @@ export default function WhatsCookingPage() {
               </button>
               <button
                 onClick={() => setShowMode('ai')}
-                className={`flex items-center gap-2 px-6 py-3 rounded-xl font-semibold transition-all ${
+                className={`flex items-center gap-2 px-6 py-3 rounded-xl font-semibold transition-all duration-300 ${
                   showMode === 'ai'
-                    ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg'
-                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                    ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg scale-105'
+                    : 'bg-white text-gray-700 border-2 border-gray-200 hover:border-purple-300 hover:bg-purple-50'
                 }`}
               >
                 <span>🤖</span>
@@ -126,12 +126,12 @@ export default function WhatsCookingPage() {
 
             {recipes.length === 0 ? (
               <div className="text-center">
-                <p className="text-gray-600 text-lg mb-8">
+                <p className="text-gray-700 text-lg mb-8">
                   Chưa có công thức nào. Hãy tạo công thức đầu tiên của bạn!
                 </p>
                 <button
                   onClick={() => router.push('/recipes/new')}
-                  className="bg-gradient-to-r from-orange-600 to-amber-600 text-white font-semibold py-3 px-6 rounded-lg hover:shadow-lg transition-shadow"
+                  className="bg-gradient-to-r from-orange-600 to-amber-600 text-white font-semibold py-3 px-8 rounded-xl hover:shadow-lg transition-all duration-300 hover:scale-105"
                 >
                   ➕ Tạo công thức mới
                 </button>
@@ -139,7 +139,7 @@ export default function WhatsCookingPage() {
             ) : (
               <>
                 {/* Description based on mode */}
-                <p className="text-gray-600 text-center text-lg mb-8">
+                <p className="text-gray-700 text-center text-lg mb-8">
                   {showMode === 'random'
                     ? 'Dưới đây là những gợi ý ngẫu nhiên cho bạn hôm nay! 🍳'
                     : 'AI đã phân tích và gợi ý những món phù hợp nhất với bạn! 🤖✨'
@@ -152,11 +152,11 @@ export default function WhatsCookingPage() {
                     {suggestedRecipes.map((recipe) => (
                       <div
                         key={recipe.id}
-                        className="bg-gradient-to-br from-orange-50 to-amber-50 rounded-xl p-6 border border-orange-200 hover:shadow-lg transition-shadow cursor-pointer"
+                        className="bg-white rounded-2xl p-6 border-2 border-orange-200 hover:border-orange-400 hover:shadow-xl transition-all duration-300 cursor-pointer hover:scale-[1.03] hover:-translate-y-1"
                         onClick={() => handleCookNow(recipe.id)}
                       >
                         {recipe.coverImage && (
-                          <div className="w-full h-40 mb-4 rounded-lg overflow-hidden bg-gray-100">
+                          <div className="w-full h-40 mb-4 rounded-xl overflow-hidden border border-gray-200 shadow-md">
                             <img
                               src={recipe.coverImage}
                               alt={recipe.dishName}
@@ -165,7 +165,7 @@ export default function WhatsCookingPage() {
                           </div>
                         )}
                         <div className="text-3xl mb-3">
-                          {recipe.dishName?.includes('gà') ? '🍗' : 
+                          {recipe.dishName?.includes('gà') ? '🍗' :
                            recipe.dishName?.includes('cá') ? '🐟' :
                            recipe.dishName?.includes('rau') ? '🥬' :
                            recipe.dishName?.includes('canh') ? '🍲' : '🍽️'}
@@ -196,7 +196,7 @@ export default function WhatsCookingPage() {
                             e.stopPropagation();
                             handleCookNow(recipe.id);
                           }}
-                          className="w-full bg-gradient-to-r from-orange-600 to-amber-600 text-white font-semibold py-2 px-4 rounded-lg hover:shadow-md transition-shadow text-sm"
+                          className="w-full bg-gradient-to-r from-orange-600 to-amber-600 text-white font-semibold py-2 px-4 rounded-xl hover:shadow-lg transition-all duration-300 text-sm hover:scale-105"
                         >
                           🔥 Nấu ngay
                         </button>
@@ -217,18 +217,18 @@ export default function WhatsCookingPage() {
                         {aiRecommendations.map((recipe, index) => (
                           <div
                             key={recipe.id}
-                            className="bg-gradient-to-br from-purple-50 to-pink-50 rounded-xl p-6 border border-purple-200 hover:shadow-xl transition-shadow cursor-pointer relative"
+                            className="bg-white rounded-2xl p-6 border-2 border-purple-200 hover:border-purple-400 hover:shadow-xl transition-all duration-300 cursor-pointer relative hover:scale-[1.03] hover:-translate-y-1"
                             onClick={() => handleCookNow(recipe.id)}
                           >
                             {/* AI Badge */}
                             <div className="absolute top-3 right-3 z-10">
-                              <div className="bg-gradient-to-r from-purple-500 to-pink-500 text-white text-xs font-bold px-2 py-1 rounded-full shadow">
+                              <div className="bg-gradient-to-r from-purple-600 to-pink-600 text-white text-xs font-bold px-3 py-1.5 rounded-full shadow-lg">
                                 🤖 AI Pick #{index + 1}
                               </div>
                             </div>
 
                             {recipe.coverImage && (
-                              <div className="w-full h-40 mb-4 rounded-lg overflow-hidden bg-gray-100">
+                              <div className="w-full h-40 mb-4 rounded-xl overflow-hidden border border-gray-200 shadow-md">
                                 <img
                                   src={recipe.coverImage}
                                   alt={recipe.dishName}
@@ -268,7 +268,7 @@ export default function WhatsCookingPage() {
                                 e.stopPropagation();
                                 handleCookNow(recipe.id);
                               }}
-                              className="w-full bg-gradient-to-r from-purple-600 to-pink-600 text-white font-semibold py-2 px-4 rounded-lg hover:shadow-md transition-shadow text-sm"
+                              className="w-full bg-gradient-to-r from-purple-600 to-pink-600 text-white font-semibold py-2 px-4 rounded-xl hover:shadow-lg transition-all duration-300 text-sm hover:scale-105"
                             >
                               🔥 Nấu ngay
                             </button>
@@ -277,15 +277,15 @@ export default function WhatsCookingPage() {
                       </div>
                     ) : (
                       <div className="text-center py-12">
-                        <div className="w-24 h-24 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <div className="w-24 h-24 bg-gradient-to-br from-purple-100 to-pink-100 rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg">
                           <span className="text-5xl">🤖</span>
                         </div>
-                        <p className="text-gray-600 mb-4">
+                        <p className="text-gray-700 mb-4">
                           Chưa có gợi ý AI. Hãy nấu thử một vài món để AI học sở thích của bạn!
                         </p>
                         <button
                           onClick={() => setShowMode('random')}
-                          className="text-purple-600 hover:text-purple-700 font-semibold"
+                          className="text-blue-600 hover:text-blue-700 font-semibold"
                         >
                           ← Xem gợi ý ngẫu nhiên
                         </button>
@@ -299,13 +299,13 @@ export default function WhatsCookingPage() {
                   <div className="flex flex-col sm:flex-row gap-4 justify-center mb-8">
                     <button
                       onClick={handleRefresh}
-                      className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-semibold py-3 px-8 rounded-lg hover:shadow-lg transition-shadow"
+                      className="bg-white border-2 border-blue-200 text-gray-700 font-semibold py-3 px-8 rounded-2xl hover:border-blue-400 hover:shadow-lg transition-all duration-300 hover:scale-105"
                     >
                       🔄 Gợi ý khác
                     </button>
                     <button
                       onClick={() => router.push('/recipes/select-to-cook')}
-                      className="bg-white border-2 border-blue-600 text-blue-600 font-semibold py-3 px-8 rounded-lg hover:bg-blue-50 transition-colors"
+                      className="bg-white border-2 border-gray-200 text-gray-700 font-semibold py-3 px-8 rounded-2xl hover:border-gray-300 hover:shadow-lg transition-all duration-300 hover:scale-105"
                     >
                       📖 Xem tất cả công thức
                     </button>
@@ -314,18 +314,12 @@ export default function WhatsCookingPage() {
 
                 {/* Action Buttons - Show for AI mode */}
                 {showMode === 'ai' && aiRecommendations.length > 0 && (
-                  <div className="flex flex-col sm:flex-row gap-4 justify-center mb-8">
+                  <div className="flex justify-center mb-8">
                     <button
                       onClick={loadAiRecommendations}
-                      className="bg-gradient-to-r from-purple-600 to-pink-600 text-white font-semibold py-3 px-8 rounded-lg hover:shadow-lg transition-shadow"
+                      className="bg-white border-2 border-purple-200 text-gray-700 font-semibold py-3 px-8 rounded-2xl hover:border-purple-400 hover:shadow-lg transition-all duration-300 hover:scale-105"
                     >
                       🔄 Làm mới gợi ý AI
-                    </button>
-                    <button
-                      onClick={() => router.push('/recommendations')}
-                      className="bg-white border-2 border-purple-600 text-purple-600 font-semibold py-3 px-8 rounded-lg hover:bg-purple-50 transition-colors"
-                    >
-                      📊 Xem tất cả gợi ý AI
                     </button>
                   </div>
                 )}
@@ -334,7 +328,7 @@ export default function WhatsCookingPage() {
 
             <div className="mt-12 grid grid-cols-1 md:grid-cols-3 gap-6">
               {/* Feature Card 1 */}
-              <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl p-6 border border-blue-200">
+              <div className="bg-white rounded-2xl p-6 border-2 border-blue-200 shadow-md hover:border-blue-400 hover:shadow-lg transition-all duration-300">
                 <div className="text-3xl mb-3">🎲</div>
                 <h3 className="font-semibold text-gray-900 mb-2">Gợi ý ngẫu nhiên</h3>
                 <p className="text-sm text-gray-600">
@@ -343,7 +337,7 @@ export default function WhatsCookingPage() {
               </div>
 
               {/* Feature Card 2 */}
-              <div className="bg-gradient-to-br from-purple-50 to-purple-100 rounded-xl p-6 border border-purple-200">
+              <div className="bg-white rounded-2xl p-6 border-2 border-purple-200 shadow-md hover:border-purple-400 hover:shadow-lg transition-all duration-300">
                 <div className="text-3xl mb-3">🤖</div>
                 <h3 className="font-semibold text-gray-900 mb-2">AI thông minh</h3>
                 <p className="text-sm text-gray-600">
@@ -352,7 +346,7 @@ export default function WhatsCookingPage() {
               </div>
 
               {/* Feature Card 3 */}
-              <div className="bg-gradient-to-br from-indigo-50 to-indigo-100 rounded-xl p-6 border border-indigo-200">
+              <div className="bg-white rounded-2xl p-6 border-2 border-orange-200 shadow-md hover:border-orange-400 hover:shadow-lg transition-all duration-300">
                 <div className="text-3xl mb-3">⚡</div>
                 <h3 className="font-semibold text-gray-900 mb-2">Nấu ngay lập tức</h3>
                 <p className="text-sm text-gray-600">
@@ -364,7 +358,7 @@ export default function WhatsCookingPage() {
             <div className="mt-8 text-center">
               <button
                 onClick={() => router.push('/home')}
-                className="text-blue-600 hover:text-blue-700 font-semibold"
+                className="text-gray-700 hover:text-gray-900 font-semibold transition-colors duration-200"
               >
                 ← Quay lại Dashboard
               </button>
