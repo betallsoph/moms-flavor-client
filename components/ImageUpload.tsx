@@ -123,7 +123,8 @@ export default function ImageUpload({
       console.log('✅ Upload success:', data.imageUrl);
       onUploadComplete(data.imageUrl);
 
-      // 7. Reset input để có thể upload lại
+      // 7. Reset preview và input để có thể upload lại
+      setPreview(null);
       if (fileInputRef.current) {
         fileInputRef.current.value = '';
       }

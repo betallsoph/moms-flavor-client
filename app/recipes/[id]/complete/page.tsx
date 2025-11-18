@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
+import Image from 'next/image';
 import { LoadingSpinner } from '@/components/ui';
 import { RecipeService } from '@/libs/recipeService';
 
@@ -130,18 +131,34 @@ export default function CompleteRecipePage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-orange-50 via-white to-amber-50">
-      <main className="max-w-4xl mx-auto px-6 py-12">
+      <main className="max-w-7xl mx-auto px-6 py-12">
         <div className="bg-white rounded-2xl shadow-lg border-2 border-orange-200 p-8">
-          <div className="mb-8">
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">
-              {recipe.dishName || recipe.recipeName || 'Công thức'}
-            </h2>
-            <p className="text-gray-600">
-              Nhập danh sách nguyên liệu cần thiết để nấu món ăn này
-            </p>
-          </div>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+            {/* Image inside modal */}
+            <div className="flex flex-col items-center justify-center">
+              <div className="relative w-full p-2 border-2 border-orange-300 rounded-lg">
+                <Image
+                  src="/assets/background/ingredient.png"
+                  alt="Ingredients Illustration"
+                  width={500}
+                  height={500}
+                  className="object-contain w-full h-auto rounded-lg"
+                />
+              </div>
+            </div>
 
-          <form onSubmit={handleSaveAndContinue} className="space-y-6">
+            {/* Form inside modal */}
+            <div>
+              <div className="mb-8">
+                <h2 className="text-2xl font-bold text-gray-900 mb-2">
+                  {recipe.dishName || recipe.recipeName || 'Công thức'}
+                </h2>
+                <p className="text-gray-600">
+                  Nhập danh sách nguyên liệu cần thiết để nấu món ăn này
+                </p>
+              </div>
+
+              <form onSubmit={handleSaveAndContinue} className="space-y-6">
             {/* Ingredients List */}
             <div>
               <label className="block text-sm font-semibold text-orange-700 mb-4">
@@ -288,7 +305,9 @@ export default function CompleteRecipePage() {
                 Lưu và tiếp tục sau
               </button>
             </div>
-          </form>
+              </form>
+            </div>
+          </div>
         </div>
       </main>
     </div>
