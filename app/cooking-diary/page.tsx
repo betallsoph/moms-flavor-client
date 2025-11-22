@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { PageContainer, PageHeader, LoadingSpinner, GradientButton } from '@/components/ui';
+import { LoadingSpinner } from '@/components/ui';
 import { auth } from '@/libs/firebase';
 import * as firestoreService from '@/libs/firestore';
 
@@ -22,6 +22,28 @@ interface GroupedEntries {
 }
 
 type TabType = 'by-recipe' | 'timeline';
+
+const STICKER_IMAGES = [
+  '/assets/sticker1/ChatGPT Image Nov 4, 2025, 09_34_34 PM.png',
+  '/assets/sticker1/ChatGPT Image Nov 4, 2025, 09_34_37 PM.png',
+  '/assets/sticker1/ChatGPT Image Nov 4, 2025, 10_24_54 PM.png',
+  '/assets/sticker1/canh chua.png',
+  '/assets/sticker2/ChatGPT Image Nov 4, 2025, 09_34_35 PM.png',
+  '/assets/sticker2/ChatGPT Image Nov 4, 2025, 10_27_58 PM.png',
+  '/assets/sticker2/ChatGPT Image Nov 4, 2025, 10_42_08 PM.png',
+  '/assets/sticker2/tobboki.png',
+  '/assets/sticker3/ChatGPT Image Nov 4, 2025, 08_35_51 PM.png',
+  '/assets/sticker3/ChatGPT Image Nov 4, 2025, 08_42_01 PM.png',
+  '/assets/sticker3/ChatGPT Image Nov 4, 2025, 09_34_31 PM.png',
+  '/assets/sticker3/ChatGPT Image Nov 4, 2025, 10_24_56 PM.png',
+];
+
+const getStickerSrc = (seed: string, offset = 0) => {
+  if (!STICKER_IMAGES.length) return '';
+  const hash = seed.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+  const index = Math.abs(hash + offset) % STICKER_IMAGES.length;
+  return encodeURI(STICKER_IMAGES[index]);
+};
 
 export default function CookingDiaryPage() {
   const router = useRouter();
@@ -128,23 +150,24 @@ export default function CookingDiaryPage() {
   const monthKeys = Object.keys(groupedByMonth);
 
   return (
-    <PageContainer>
-      <PageHeader
-        icon="📔"
-        title="Nhật ký nấu & Kỷ niệm"
-        backButton={{
-          label: 'Quay lại trang chủ',
-          onClick: () => router.push('/home'),
-        }}
-      />
-
+    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-pink-50">
       {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-6 py-12">
-        {loading ? (
-          <LoadingSpinner message="Đang tải nhật ký..." />
-        ) : entries.length === 0 ? (
-          <div className="bg-gray-50 border border-gray-200 rounded-2xl p-12 text-center shadow-sm">
-            <div className="max-w-md mx-auto">
+      <main className="max-w-6xl mx-auto px-6 py-12">
+        <div className="bg-white rounded-2xl shadow-lg border-2 border-purple-200 p-8 mb-8">
+          {/* Header */}
+          <div className="text-center mb-8">
+            <h1 className="text-4xl font-bold text-gray-800 mb-2">
+              Nhật ký nấu & Kỷ niệm
+            </h1>
+            <p className="text-base text-gray-600">
+              Xem lại hành trình nấu ăn của bạn
+            </p>
+          </div>
+
+          {loading ? (
+            <LoadingSpinner message="Đang tải nhật ký..." />
+          ) : entries.length === 0 ? (
+            <div className="text-center py-12">
               <div className="w-24 h-24 bg-gradient-to-br from-purple-100 to-pink-100 rounded-full flex items-center justify-center mx-auto mb-6 shadow-md">
                 <span className="text-5xl">📝</span>
               </div>
@@ -154,42 +177,38 @@ export default function CookingDiaryPage() {
               <p className="text-gray-600 mb-8">
                 Hãy nấu một món ăn và ghi lại kinh nghiệm của bạn!
               </p>
-              <GradientButton onClick={() => router.push('/recipes')}>
+              <button
+                onClick={() => router.push('/recipes')}
+                className="px-8 py-3 bg-purple-100 hover:bg-purple-200 border-2 border-purple-300 rounded-xl transition-all hover:scale-[1.02] font-bold text-purple-700"
+              >
                 Xem danh sách công thức
-              </GradientButton>
-            </div>
-          </div>
-        ) : (
-          <>
-            {/* Tabs */}
-            <div className="flex items-center justify-center gap-4 mb-12">
-              <button
-                onClick={() => setActiveTab('by-recipe')}
-                className={`px-8 py-4 rounded-2xl font-bold transition-all duration-300 ${
-                  activeTab === 'by-recipe'
-                    ? 'bg-gradient-to-r from-purple-200 to-pink-200 text-purple-800 shadow-lg scale-105 border-2 border-purple-300'
-                    : 'bg-white text-gray-700 border-2 border-gray-200 hover:border-purple-300 hover:bg-purple-50'
-                }`}
-              >
-                <span className="flex items-center gap-2">
-                  <span>📚</span>
-                  <span>Theo món ăn</span>
-                </span>
-              </button>
-              <button
-                onClick={() => setActiveTab('timeline')}
-                className={`px-8 py-4 rounded-2xl font-bold transition-all duration-300 ${
-                  activeTab === 'timeline'
-                    ? 'bg-gradient-to-r from-purple-200 to-pink-200 text-purple-800 shadow-lg scale-105 border-2 border-purple-300'
-                    : 'bg-white text-gray-700 border-2 border-gray-200 hover:border-purple-300 hover:bg-purple-50'
-                }`}
-              >
-                <span className="flex items-center gap-2">
-                  <span>📅</span>
-                  <span>Timeline</span>
-                </span>
               </button>
             </div>
+          ) : (
+            <>
+              {/* Tabs */}
+              <div className="flex justify-center gap-4 mb-8">
+                <button
+                  onClick={() => setActiveTab('by-recipe')}
+                  className={`px-6 py-3 rounded-xl font-bold transition-all ${
+                    activeTab === 'by-recipe'
+                      ? 'bg-purple-100 border-2 border-purple-300 text-purple-700'
+                      : 'bg-gray-50 border-2 border-gray-200 text-gray-700 hover:bg-gray-100'
+                  }`}
+                >
+                  Theo món ăn
+                </button>
+                <button
+                  onClick={() => setActiveTab('timeline')}
+                  className={`px-6 py-3 rounded-xl font-bold transition-all ${
+                    activeTab === 'timeline'
+                      ? 'bg-purple-100 border-2 border-purple-300 text-purple-700'
+                      : 'bg-gray-50 border-2 border-gray-200 text-gray-700 hover:bg-gray-100'
+                  }`}
+                >
+                  Timeline
+                </button>
+              </div>
 
             {/* By Recipe Tab */}
             {activeTab === 'by-recipe' && (
@@ -206,14 +225,11 @@ export default function CookingDiaryPage() {
                       </h3>
                       <div className="space-y-2">
                         <div className="flex items-center gap-2 text-gray-600">
-                          <span>📅</span>
-                          <span className="text-sm">Lần gần nhất: {group.latestEntry.cookDate}</span>
+                          <span className="text-sm font-semibold text-gray-700">Lần gần nhất:</span>
+                          <span className="text-sm">{group.latestEntry.cookDate}</span>
                         </div>
-                        <div className="flex items-center gap-2">
-                          <span>🍳</span>
-                          <span className="text-sm font-semibold text-gray-700">
-                            Đã nấu {group.count} lần
-                          </span>
+                        <div className="text-sm font-semibold text-gray-700">
+                          Đã nấu {group.count} lần
                         </div>
                       </div>
                     </div>
@@ -279,7 +295,11 @@ export default function CookingDiaryPage() {
                                       className="w-full h-full object-cover"
                                     />
                                   ) : (
-                                    <span className="text-5xl">🍳</span>
+                                    <img
+                                      src={getStickerSrc(entry.id)}
+                                      alt="Cooking sticker"
+                                      className="w-20 h-20 object-contain opacity-90"
+                                    />
                                   )}
                                 </div>
 
@@ -290,7 +310,7 @@ export default function CookingDiaryPage() {
 
                                 {/* Date */}
                                 <div className="flex items-center gap-2 text-sm text-gray-600">
-                                  <span>📅</span>
+                                  <span className="font-semibold text-gray-700">Ngày nấu:</span>
                                   <span>{formatDate(entry.cookDate)}</span>
                                 </div>
 
@@ -298,12 +318,12 @@ export default function CookingDiaryPage() {
                                 <div className="flex gap-2 flex-wrap">
                                   {entry.mistakes && entry.mistakes.trim() && (
                                     <span className="text-xs bg-purple-100 text-purple-700 px-2 py-1 rounded-full border border-purple-200">
-                                      📝 Ghi chú
+                                      Có ghi chú
                                     </span>
                                   )}
                                   {entry.images && entry.images.length > 0 && (
                                     <span className="text-xs bg-pink-100 text-pink-700 px-2 py-1 rounded-full border border-pink-200">
-                                      📸 {entry.images.length}
+                                      {entry.images.length} ảnh
                                     </span>
                                   )}
                                 </div>
@@ -319,7 +339,18 @@ export default function CookingDiaryPage() {
             )}
           </>
         )}
+        </div>
+
+        {/* Back Button */}
+        <div className="text-center">
+          <button
+            onClick={() => router.push('/home')}
+            className="px-6 py-3 bg-gray-50 hover:bg-gray-100 border-2 border-gray-200 rounded-xl transition-all hover:scale-[1.02] font-bold text-gray-700"
+          >
+            Quay lại trang chủ
+          </button>
+        </div>
       </main>
-    </PageContainer>
+    </div>
   );
 }

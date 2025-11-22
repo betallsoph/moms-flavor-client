@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
-import { PageContainer, PageHeader, LoadingSpinner } from '@/components/ui';
+import { LoadingSpinner } from '@/components/ui';
 import { auth } from '@/libs/firebase';
 import * as firestoreService from '@/libs/firestore';
 
@@ -86,134 +86,133 @@ export default function CookingDiaryDetailPage() {
 
   if (entries.length === 0) {
     return (
-      <PageContainer>
-        <PageHeader
-          icon="📔"
-          title="Lịch sử nấu"
-          backButton={{
-            label: 'Quay lại',
-            onClick: () => router.push('/cooking-diary'),
-          }}
-        />
+      <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-pink-50">
         <main className="max-w-4xl mx-auto px-6 py-12">
-          <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-8 text-center">
-            <p className="text-gray-600">Chưa có lần nấu nào cho món này</p>
+          <div className="bg-white rounded-2xl shadow-lg border-2 border-purple-200 p-8 text-center">
+            <div className="text-center mb-8">
+              <h1 className="text-4xl font-bold text-gray-800 mb-2">
+                Lịch sử nấu
+              </h1>
+            </div>
+            <p className="text-gray-600 mb-6">Chưa có lần nấu nào cho món này</p>
+            <button
+              onClick={() => router.push('/cooking-diary')}
+              className="px-6 py-3 bg-gray-50 hover:bg-gray-100 border-2 border-gray-200 rounded-xl transition-all hover:scale-[1.02] font-bold text-gray-700"
+            >
+              Quay lại nhật ký
+            </button>
           </div>
         </main>
-      </PageContainer>
+      </div>
     );
   }
 
   return (
-    <PageContainer>
-      <PageHeader
-        icon="📔"
-        title={`Lịch sử nấu: ${dishName}`}
-        backButton={{
-          label: 'Quay lại',
-          onClick: () => router.push('/cooking-diary'),
-        }}
-      />
-
+    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-pink-50">
       <main className="max-w-4xl mx-auto px-6 py-12">
-        {/* Timeline Header */}
-        <div className="mb-8 text-center">
-          <h1 className="text-4xl font-bold text-gray-900 mb-2">{dishName}</h1>
-          <p className="text-gray-600">
-            Đã nấu {entries.length} lần
-          </p>
-        </div>
+        <div className="bg-white rounded-2xl shadow-lg border-2 border-purple-200 p-8 mb-8">
+          {/* Header */}
+          <div className="text-center mb-8">
+            <h1 className="text-4xl font-bold text-gray-800 mb-2">
+              {dishName}
+            </h1>
+            <p className="text-base text-gray-600">
+              Đã nấu {entries.length} lần
+            </p>
+          </div>
 
-        {/* Timeline */}
-        <div className="space-y-8">
-          {entries.map((entry, index) => (
-            <div 
-              key={entry.id}
-              className="bg-white rounded-2xl shadow-lg border border-purple-100 p-8 relative"
-            >
-              {/* Entry Number Badge */}
-              <div className="absolute -top-4 -left-4 w-12 h-12 bg-purple-600 text-white rounded-full flex items-center justify-center font-bold text-lg shadow-lg">
-                #{entries.length - index}
-              </div>
+          {/* Timeline */}
+          <div className="space-y-8">
+            {entries.map((entry, index) => (
+              <div
+                key={entry.id}
+                className="bg-gradient-to-r from-purple-50 to-pink-50 rounded-2xl border-2 border-purple-200 p-6 relative"
+              >
+                {/* Entry Number Badge */}
+                <div className="absolute -top-3 -left-3 w-10 h-10 bg-purple-600 text-white rounded-full flex items-center justify-center font-bold text-sm shadow-lg">
+                  #{entries.length - index}
+                </div>
 
-              {/* Date */}
-              <div className="mb-6">
-                <p className="text-2xl font-bold text-gray-900">
-                  📅 {formatDate(entry.timestamp)}
-                </p>
-                <p className="text-sm text-gray-500 mt-1">
-                  {entry.cookDate}
-                </p>
-              </div>
+                {/* Date */}
+                <div className="mb-4 ml-4">
+                  <p className="text-lg font-bold text-gray-900">
+                    {formatDate(entry.timestamp)}
+                  </p>
+                  <p className="text-sm text-gray-500">
+                    {entry.cookDate}
+                  </p>
+                </div>
 
-              {/* Images */}
-              {entry.images && entry.images.length > 0 && (
-                <div className="mb-6">
-                  <h3 className="text-lg font-bold text-gray-900 mb-3 flex items-center gap-2">
-                    <span>📸</span>
-                    <span>Hình ảnh kết quả ({entry.images.length})</span>
-                  </h3>
-                  <div className="space-y-4">
-                    {entry.images.map((imageUrl, imgIndex) => (
-                      <div key={imgIndex} className="relative rounded-xl overflow-hidden shadow-md border-2 border-gray-200">
-                        <img
-                          src={imageUrl}
-                          alt={`${dishName} - Lần ${entries.length - index} - Ảnh ${imgIndex + 1}`}
-                          className="w-full h-auto object-cover"
-                        />
-                      </div>
-                    ))}
+                {/* Images */}
+                {entry.images && entry.images.length > 0 && (
+                  <div className="mb-4">
+                    <h3 className="text-base font-bold text-gray-900 mb-2 flex items-center gap-2">
+                      <span>Hình ảnh kết quả ({entry.images.length})</span>
+                    </h3>
+                    <div className="grid grid-cols-2 gap-3">
+                      {entry.images.map((imageUrl, imgIndex) => (
+                        <div key={imgIndex} className="relative rounded-xl overflow-hidden shadow-md border-2 border-purple-200">
+                          <img
+                            src={imageUrl}
+                            alt={`${dishName} - Lần ${entries.length - index} - Ảnh ${imgIndex + 1}`}
+                            className="w-full h-40 object-cover"
+                          />
+                        </div>
+                      ))}
+                    </div>
                   </div>
-                </div>
-              )}
+                )}
 
-              {/* Mistakes */}
-              <div className="mb-6">
-                <h3 className="text-lg font-bold text-gray-900 mb-3 flex items-center gap-2">
-                  <span>⚠️</span>
-                  <span>Sai sót</span>
-                </h3>
-                <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-                  <p className="text-gray-700 leading-relaxed whitespace-pre-wrap">
-                    {entry.mistakes || 'Không có ghi chú sai sót'}
-                  </p>
-                </div>
-              </div>
+                {/* Mistakes */}
+                {entry.mistakes && entry.mistakes.trim() && (
+                  <div className="mb-4">
+                    <h3 className="text-base font-bold text-gray-900 mb-2">Sai sót</h3>
+                    <div className="bg-white border border-orange-200 rounded-lg p-3">
+                      <p className="text-gray-700 text-sm leading-relaxed whitespace-pre-wrap">
+                        {entry.mistakes}
+                      </p>
+                    </div>
+                  </div>
+                )}
 
-              {/* Improvements */}
-              <div>
-                <h3 className="text-lg font-bold text-gray-900 mb-3 flex items-center gap-2">
-                  <span>✨</span>
-                  <span>Cải thiện</span>
-                </h3>
-                <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-                  <p className="text-gray-700 leading-relaxed whitespace-pre-wrap">
-                    {entry.improvements || 'Không có ghi chú cải thiện'}
-                  </p>
-                </div>
+                {/* Improvements */}
+                {entry.improvements && entry.improvements.trim() && (
+                  <div>
+                    <h3 className="text-base font-bold text-gray-900 mb-2">Cải thiện</h3>
+                    <div className="bg-white border border-green-200 rounded-lg p-3">
+                      <p className="text-gray-700 text-sm leading-relaxed whitespace-pre-wrap">
+                        {entry.improvements}
+                      </p>
+                    </div>
+                  </div>
+                )}
               </div>
-            </div>
-          ))}
+            ))}
+          </div>
+
+          {/* Action Buttons */}
+          <div className="mt-8 flex flex-col sm:flex-row gap-4 justify-center">
+            {entries[0]?.recipeId && (
+              <button
+                onClick={() => router.push(`/recipes/${entries[0].recipeId}`)}
+                className="px-8 py-3 bg-purple-100 hover:bg-purple-200 border-2 border-purple-300 rounded-xl transition-all hover:scale-[1.02] font-bold text-purple-700"
+              >
+                Xem công thức
+              </button>
+            )}
+          </div>
         </div>
 
-        {/* Bottom Actions */}
-        <div className="mt-12 flex gap-4">
+        {/* Back Button */}
+        <div className="text-center">
           <button
             onClick={() => router.push('/cooking-diary')}
-            className="flex-1 bg-gray-200 text-gray-900 font-semibold py-3 px-6 rounded-lg hover:bg-gray-300 transition-colors"
+            className="px-6 py-3 bg-gray-50 hover:bg-gray-100 border-2 border-gray-200 rounded-xl transition-all hover:scale-[1.02] font-bold text-gray-700"
           >
-            ← Quay lại danh sách
+            Quay lại nhật ký
           </button>
-          {entries[0]?.recipeId && (
-            <button
-              onClick={() => router.push(`/recipes/${entries[0].recipeId}`)}
-              className="flex-1 bg-purple-600 text-white font-semibold py-3 px-6 rounded-lg hover:bg-purple-700 transition-colors"
-            >
-              Xem công thức →
-            </button>
-          )}
         </div>
       </main>
-    </PageContainer>
+    </div>
   );
 }

@@ -260,3 +260,74 @@ export async function uploadJSON(
     throw new Error(`Failed to upload JSON to Naver Object Storage: ${error.message || error}`);
   }
 }
+
+/**
+ * Upload audio (voice) to Naver Object Storage
+ * Folder mặc định: audio/speech/{userId}/timestamp-filename
+ */
+export async function uploadAudio(
+  file: File,
+  userId: string,
+  folder: string = 'audio/speech'
+): Promise<string> {
+  try {
+    const timestamp = Date.now();
+    const sanitizedFilename = file.name.replace(/[^a-zA-Z0-9.-]/g, '_');
+    const key = `${folder}/${userId}/${timestamp}-${sanitizedFilename}`;
+
+    console.log('🎙️ Uploading audio to Naver:', key);
+
+    const arrayBuffer = await file.arrayBuffer();
+    const buffer = Buffer.from(arrayBuffer);
+
+    const uploadParams: PutObjectCommandInput = {
+      Bucket: process.env.NEXT_PUBLIC_NAVER_BUCKET || 'moms-flavor-images',
+      Key: key,
+      Body: buffer,
+      ContentType: file.type || 'audio/webm',
+      ACL: 'public-read',
+    };
+
+    const command = new PutObjectCommand(uploadParams);
+    await s3Client.send(command);
+
+    const bucketUrl = `${process.env.NEXT_PUBLIC_NAVER_ENDPOINT}/${process.env.NEXT_PUBLIC_NAVER_BUCKET}`;
+    const audioUrl = `${bucketUrl}/${key}`;
+
+    console.log('✅ Audio upload success:', audioUrl);
+    return audioUrl;
+  } catch (error: any) {
+    console.error('❌ Audio upload error:', error);
+    throw new Error(`Failed to upload audio to Naver Object Storage: ${error.message || error}`);
+  }
+}
+
+/**
+ * Validate audio file before upload
+ */
+export function validateAudioFile(file: File, maxSizeMB: number = 20): boolean {
+  const allowedTypes = [
+    'audio/webm',
+    'audio/wav',
+    'audio/x-wav',
+    'audio/mpeg',
+    'audio/mp3',
+    'audio/ogg',
+    'audio/mp4',
+  ];
+
+  if (!allowedTypes.includes(file.type)) {
+    throw new Error(`Invalid audio type. Allowed: webm, wav, mp3, ogg, mp4`);
+  }
+
+  const maxSizeBytes = maxSizeMB * 1024 * 1024;
+  if (file.size > maxSizeBytes) {
+    throw new Error(`Audio too large. Max size: ${maxSizeMB}MB`);
+  }
+
+  if (file.name.length > 255) {
+    throw new Error('Filename too long');
+  }
+
+  return true;
+}

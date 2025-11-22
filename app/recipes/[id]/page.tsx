@@ -90,6 +90,16 @@ export default function RecipeDetailPage() {
   const [authInitialized, setAuthInitialized] = useState(false);
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [showUpdateOptions, setShowUpdateOptions] = useState(false);
+  const hasExistingInstructions = useMemo(() => {
+    if (!recipe?.instructions) return false;
+    try {
+      const parsed = JSON.parse(recipe.instructions);
+      return Array.isArray(parsed) && parsed.length > 0;
+    } catch {
+      return true;
+    }
+  }, [recipe?.instructions]);
 
   // Random sticker for placeholder (changes on each page load)
   const randomSticker = useMemo(() => {
@@ -126,23 +136,8 @@ export default function RecipeDetailPage() {
 
     loadRecipe();
 
-    // Reload recipe when window gets focus (user returns from another tab)
-    const handleFocus = () => {
-      loadRecipe();
-    };
-
-    // Reload when localStorage changes (for non-authenticated users)
-    const handleStorageChange = () => {
-      loadRecipe();
-    };
-
-    window.addEventListener('focus', handleFocus);
-    window.addEventListener('storage', handleStorageChange);
-
     return () => {
       mounted = false;
-      window.removeEventListener('focus', handleFocus);
-      window.removeEventListener('storage', handleStorageChange);
     };
   }, [recipeId, authInitialized]);
 
@@ -220,7 +215,9 @@ export default function RecipeDetailPage() {
       // Get current user ID from auth
       const userId = authService.getCurrentUser()?.id;
       if (!userId) {
-        throw new Error('User not authenticated');
+        setUploading(false);
+        alert('Bạn cần đăng nhập để upload hình ảnh.');
+        return;
       }
 
       console.log('Starting upload...', { fileName: file.name, userId });
@@ -608,12 +605,43 @@ export default function RecipeDetailPage() {
           >
             Nấu món này
           </button>
-          <button
-            onClick={() => router.push(getNextCompletionPage())}
-            className="w-full p-4 bg-orange-100 hover:bg-orange-200 border-2 border-orange-300 rounded-xl transition-all hover:scale-[1.02] font-bold text-orange-700"
-          >
-            Hoàn chỉnh công thức
-          </button>
+          <div>
+            <button
+              onClick={() => {
+                if (hasExistingInstructions) {
+                  setShowUpdateOptions(prev => !prev);
+                } else {
+                  router.push(getNextCompletionPage());
+                }
+              }}
+              className="w-full p-4 bg-orange-100 hover:bg-orange-200 border-2 border-orange-300 rounded-xl transition-all hover:scale-[1.02] font-bold text-orange-700"
+            >
+              {hasExistingInstructions ? 'Cập nhật công thức' : 'Hoàn chỉnh công thức'}
+            </button>
+            {hasExistingInstructions && showUpdateOptions && (
+              <div className="mt-3 bg-white border border-orange-200 rounded-xl p-4 space-y-2 shadow-sm">
+                <p className="text-sm text-gray-700 font-semibold">Chọn nội dung cần chỉnh:</p>
+                <button
+                  onClick={() => {
+                    setShowUpdateOptions(false);
+                    router.push(`/recipes/${recipeId}/complete`);
+                  }}
+                  className="w-full px-3 py-2 bg-orange-50 border-2 border-orange-200 rounded-lg text-orange-700 font-semibold hover:bg-orange-100"
+                >
+                  Cập nhật nguyên liệu
+                </button>
+                <button
+                  onClick={() => {
+                    setShowUpdateOptions(false);
+                    router.push(`/recipes/${recipeId}/instructions`);
+                  }}
+                  className="w-full px-3 py-2 bg-orange-50 border-2 border-orange-200 rounded-lg text-orange-700 font-semibold hover:bg-orange-100"
+                >
+                  Cập nhật bước nấu
+                </button>
+              </div>
+            )}
+          </div>
           <button
             onClick={() => setConfirmDeleteOpen(true)}
             className="w-full p-4 bg-red-500 hover:bg-red-600 border-2 border-red-600 rounded-xl transition-all hover:scale-[1.02] font-bold text-white"

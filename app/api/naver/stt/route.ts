@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { transcribeSpeechWithNaver } from '@/libs/naverAi';
+import { transcribeSpeechWithClova } from '@/libs/naverAi';
 
 export const runtime = 'nodejs';
 
@@ -7,7 +7,7 @@ export async function POST(request: NextRequest) {
   try {
     const formData = await request.formData();
     const file = formData.get('file') as File | null;
-    const lang = (formData.get('lang') as string | null) || 'Kor';
+    const lang = (formData.get('lang') as string | null) || 'Eng';
 
     if (!file) {
       return NextResponse.json({ error: 'File is required' }, { status: 400 });
@@ -22,13 +22,13 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const result = await transcribeSpeechWithNaver(file, { lang });
+    const { text, raw } = await transcribeSpeechWithClova(file, { lang });
 
     return NextResponse.json(
       {
         success: true,
-        text: result.text ?? '',
-        raw: result,
+        text: text ?? '',
+        raw,
       },
       { status: 200 }
     );

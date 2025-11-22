@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
-import { PageContainer, PageHeader, LoadingSpinner } from '@/components/ui';
+import { LoadingSpinner } from '@/components/ui';
 import { auth } from '@/libs/firebase';
 import * as firestoreService from '@/libs/firestore';
 
@@ -78,68 +78,54 @@ export default function CookingDiaryEntryPage() {
 
   if (!entry) {
     return (
-      <PageContainer>
-        <PageHeader
-          icon="📔"
-          title="Không tìm thấy"
-          backButton={{
-            label: 'Quay lại',
-            onClick: () => router.push('/cooking-diary'),
-          }}
-        />
+      <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-pink-50">
         <main className="max-w-4xl mx-auto px-6 py-12">
-          <div className="bg-white rounded-2xl shadow-lg border border-gray-200 p-12 text-center">
-            <p className="text-gray-600 text-lg">Không tìm thấy nhật ký này.</p>
+          <div className="bg-white rounded-2xl shadow-lg border-2 border-purple-200 p-8 text-center">
+            <div className="text-center mb-8">
+              <h1 className="text-4xl font-bold text-gray-800 mb-2">
+                Không tìm thấy
+              </h1>
+            </div>
+            <p className="text-gray-600 text-lg mb-6">Không tìm thấy nhật ký này.</p>
             <button
               onClick={() => router.push('/cooking-diary')}
-              className="mt-6 bg-purple-600 text-white font-semibold py-2 px-6 rounded-lg hover:bg-purple-700 transition-colors"
+              className="px-6 py-3 bg-gray-50 hover:bg-gray-100 border-2 border-gray-200 rounded-xl transition-all hover:scale-[1.02] font-bold text-gray-700"
             >
               Quay lại nhật ký
             </button>
           </div>
         </main>
-      </PageContainer>
+      </div>
     );
   }
 
   return (
-    <PageContainer>
-      <PageHeader
-        icon="📔"
-        title="Chi tiết nhật ký"
-        backButton={{
-          label: 'Quay lại',
-          onClick: () => router.push('/cooking-diary'),
-        }}
-      />
-
+    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-pink-50">
       <main className="max-w-4xl mx-auto px-6 py-12">
-        <div className="bg-white rounded-2xl shadow-lg border border-purple-100 overflow-hidden">
-          {/* Header with dish name and date */}
-          <div className="bg-gradient-to-r from-purple-100 to-pink-100 p-8">
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">
+        <div className="bg-white rounded-2xl shadow-lg border-2 border-purple-200 p-8 mb-8">
+          {/* Header */}
+          <div className="text-center mb-8">
+            <h1 className="text-4xl font-bold text-gray-800 mb-2">
               {entry.dishName}
             </h1>
-            <p className="text-gray-700 flex items-center gap-2">
-              <span>📅</span>
-              <span>{formatDate(entry.cookDate)}</span>
+            <p className="text-base text-gray-600">
+              {formatDate(entry.cookDate)}
             </p>
           </div>
 
           {/* Content */}
-          <div className="p-8 space-y-8">
+          <div className="space-y-6">
             {/* Images Gallery */}
             {entry.images && entry.images.length > 0 && (
-              <div className="space-y-4">
-                <h3 className="text-xl font-semibold text-gray-900 flex items-center gap-2">
-                  <span>📸</span>
-                  <span>Hình ảnh món ăn</span>
+              <div className="space-y-3">
+                <h3 className="text-base font-bold text-gray-900">
+                  Hình ảnh món ăn
                 </h3>
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                   {entry.images.map((image, index) => (
                     <div
                       key={index}
-                      className="aspect-square rounded-lg overflow-hidden border-2 border-purple-100 hover:border-purple-300 transition-colors"
+                      className="aspect-square rounded-xl overflow-hidden border-2 border-purple-200 hover:border-purple-400 transition-colors"
                     >
                       <img
                         src={image}
@@ -153,49 +139,51 @@ export default function CookingDiaryEntryPage() {
             )}
 
             {/* Mistakes */}
-            <div className="space-y-3">
-              <h3 className="text-xl font-semibold text-gray-900 flex items-center gap-2">
-                <span>📝</span>
-                <span>Những điều cần lưu ý</span>
+            <div className="space-y-2">
+              <h3 className="text-base font-bold text-gray-900">
+                Những điều cần lưu ý
               </h3>
-              <div className="bg-orange-50 border border-orange-200 rounded-lg p-6">
-                <p className="text-gray-700 whitespace-pre-wrap">
+              <div className="bg-orange-50 border border-orange-200 rounded-lg p-4">
+                <p className="text-gray-700 text-sm whitespace-pre-wrap">
                   {entry.mistakes?.trim() || 'Không có sai sót đặc biệt'}
                 </p>
               </div>
             </div>
 
             {/* Improvements */}
-            <div className="space-y-3">
-              <h3 className="text-xl font-semibold text-gray-900 flex items-center gap-2">
-                <span>💡</span>
-                <span>Cải thiện lần sau</span>
+            <div className="space-y-2">
+              <h3 className="text-base font-bold text-gray-900">
+                Cải thiện lần sau
               </h3>
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">
-                <p className="text-gray-700 whitespace-pre-wrap">
+              <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                <p className="text-gray-700 text-sm whitespace-pre-wrap">
                   {entry.improvements?.trim() || 'Không có cải thiện đặc biệt'}
                 </p>
               </div>
             </div>
 
             {/* Action Buttons */}
-            <div className="flex gap-4 pt-4">
-              <button
-                onClick={() => router.push('/cooking-diary')}
-                className="flex-1 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-semibold py-3 px-6 rounded-lg hover:shadow-lg transition-shadow"
-              >
-                Quay lại nhật ký
-              </button>
+            <div className="flex flex-col sm:flex-row gap-4 pt-4 justify-center">
               <button
                 onClick={() => router.push(`/recipes/${entry.recipeId}`)}
-                className="flex-1 bg-white border-2 border-purple-300 text-purple-700 font-semibold py-3 px-6 rounded-lg hover:bg-purple-50 transition-colors"
+                className="px-8 py-3 bg-purple-100 hover:bg-purple-200 border-2 border-purple-300 rounded-xl transition-all hover:scale-[1.02] font-bold text-purple-700"
               >
                 Xem công thức gốc
               </button>
             </div>
           </div>
         </div>
+
+        {/* Back Button */}
+        <div className="text-center">
+          <button
+            onClick={() => router.push('/cooking-diary')}
+            className="px-6 py-3 bg-gray-50 hover:bg-gray-100 border-2 border-gray-200 rounded-xl transition-all hover:scale-[1.02] font-bold text-gray-700"
+          >
+            Quay lại nhật ký
+          </button>
+        </div>
       </main>
-    </PageContainer>
+    </div>
   );
 }

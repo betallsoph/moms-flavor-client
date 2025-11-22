@@ -16,6 +16,14 @@ export default function WhatsCookingPage() {
   const [aiRecommendations, setAiRecommendations] = useState<Recipe[]>([]);
   const [aiLoading, setAiLoading] = useState(false);
   const [showMode, setShowMode] = useState<'random' | 'ai'>('random');
+  const [storyInputs, setStoryInputs] = useState({
+    dishName: '',
+    ingredients: '',
+    mood: '',
+  });
+  const [story, setStory] = useState('');
+  const [storyLoading, setStoryLoading] = useState(false);
+  const [storyError, setStoryError] = useState('');
 
   useEffect(() => {
     loadRecipes();
@@ -66,6 +74,36 @@ export default function WhatsCookingPage() {
     router.push(`/cook/${recipeId}/start-confirmation`);
   };
 
+  const handleGenerateStory = async () => {
+    if (!storyInputs.dishName.trim()) {
+      setStoryError('Vui lòng nhập tên món ăn');
+      return;
+    }
+    setStory('');
+    setStoryError('');
+    setStoryLoading(true);
+    try {
+      const res = await fetch('/api/nostalgia-story', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          dishName: storyInputs.dishName,
+          ingredients: storyInputs.ingredients,
+          mood: storyInputs.mood,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || 'Không tạo được lời dẫn');
+      }
+      setStory(data.story);
+    } catch (error: any) {
+      setStoryError(error.message || 'Không tạo được lời dẫn, thử lại nhé');
+    } finally {
+      setStoryLoading(false);
+    }
+  };
+
   const getDifficultyText = (level?: string) => {
     switch (level) {
       case 'very_easy': return 'Rất dễ';
@@ -105,6 +143,71 @@ export default function WhatsCookingPage() {
             <p className="text-base text-gray-600">
               Để chúng tôi gợi ý món ngon cho bạn
             </p>
+          </div>
+
+          {/* AI Nostalgia Storyteller */}
+          <div className="mb-10 bg-gradient-to-br from-rose-50 via-white to-orange-50 border border-orange-100 rounded-2xl p-6">
+            <div className="flex items-center gap-3 mb-4">
+              <span className="text-3xl">✨</span>
+              <div>
+                <p className="text-lg font-semibold text-gray-800">
+                  AI giúp món ăn của bạn có ý nghĩa hơn
+                </p>
+                <p className="text-sm text-gray-600">
+                  Viết đoạn gợi nhớ cảm xúc cho món ăn bạn đang nghĩ đến
+                </p>
+              </div>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+              <div className="md:col-span-1">
+                <label className="text-sm font-semibold text-orange-700 mb-1 block">Tên món</label>
+                <input
+                  type="text"
+                  value={storyInputs.dishName}
+                  onChange={(e) => setStoryInputs({ ...storyInputs, dishName: e.target.value })}
+                  placeholder="VD: Canh rau tập tàng"
+                  className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent text-sm"
+                />
+              </div>
+              <div className="md:col-span-1">
+                <label className="text-sm font-semibold text-orange-700 mb-1 block">Nguyên liệu chính (tùy chọn)</label>
+                <input
+                  type="text"
+                  value={storyInputs.ingredients}
+                  onChange={(e) => setStoryInputs({ ...storyInputs, ingredients: e.target.value })}
+                  placeholder="VD: Rau dền, mướp, tôm khô"
+                  className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent text-sm"
+                />
+              </div>
+              <div className="md:col-span-1">
+                <label className="text-sm font-semibold text-orange-700 mb-1 block">Tâm trạng / Kỷ niệm (tùy chọn)</label>
+                <input
+                  type="text"
+                  value={storyInputs.mood}
+                  onChange={(e) => setStoryInputs({ ...storyInputs, mood: e.target.value })}
+                  placeholder="VD: Bữa cơm ngày Tết"
+                  className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent text-sm"
+                />
+              </div>
+            </div>
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-4">
+              <button
+                onClick={handleGenerateStory}
+                disabled={storyLoading}
+                className="px-6 py-3 bg-orange-100 hover:bg-orange-200 border-2 border-orange-300 rounded-xl font-semibold text-orange-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {storyLoading ? 'AI đang viết...' : 'AI thổi hồn vào món ăn'}
+              </button>
+              {storyError && <p className="text-sm text-red-600">{storyError}</p>}
+            </div>
+            {story && (
+              <div className="bg-white border border-orange-200 rounded-xl p-4">
+                <p className="text-sm text-gray-600 italic mb-2">Lời dẫn gợi nhớ</p>
+                <p className="text-base text-gray-800 whitespace-pre-line leading-relaxed">
+                  {story}
+                </p>
+              </div>
+            )}
           </div>
 
           {/* Mode Switcher */}
@@ -162,15 +265,17 @@ export default function WhatsCookingPage() {
                       className="bg-white rounded-2xl p-6 border-2 border-orange-200 hover:border-orange-400 hover:shadow-xl transition-all duration-300 cursor-pointer hover:scale-[1.02]"
                       onClick={() => handleCookNow(recipe.id)}
                     >
-                      {recipe.coverImage && (
-                        <div className="w-full h-40 mb-4 rounded-xl overflow-hidden border-2 border-gray-200 shadow-md">
+                      <div className="w-full h-40 mb-4 rounded-xl overflow-hidden border-2 border-gray-200 shadow-md bg-gray-50 flex items-center justify-center">
+                        {recipe.coverImage ? (
                           <img
                             src={recipe.coverImage}
-                            alt={recipe.dishName}
+                            alt={recipe.dishName || recipe.recipeName || 'Không có hình'}
                             className="w-full h-full object-cover"
                           />
-                        </div>
-                      )}
+                        ) : (
+                          <span className="text-sm text-gray-500">Không có hình</span>
+                        )}
+                      </div>
                       <h3 className="font-bold text-gray-800 mb-3 text-lg">
                         {recipe.dishName || recipe.recipeName}
                       </h3>
@@ -220,15 +325,17 @@ export default function WhatsCookingPage() {
                             </div>
                           </div>
 
-                          {recipe.coverImage && (
-                            <div className="w-full h-40 mb-4 rounded-xl overflow-hidden border-2 border-gray-200 shadow-md">
+                          <div className="w-full h-40 mb-4 rounded-xl overflow-hidden border-2 border-gray-200 shadow-md bg-gray-50 flex items-center justify-center">
+                            {recipe.coverImage ? (
                               <img
                                 src={recipe.coverImage}
-                                alt={recipe.dishName}
+                                alt={recipe.dishName || recipe.recipeName || 'Không có hình'}
                                 className="w-full h-full object-cover"
                               />
-                            </div>
-                          )}
+                            ) : (
+                              <span className="text-sm text-gray-500">Không có hình</span>
+                            )}
+                          </div>
                           <h3 className="font-bold text-gray-800 mb-3 text-lg">
                             {recipe.dishName || recipe.recipeName}
                           </h3>
@@ -280,7 +387,7 @@ export default function WhatsCookingPage() {
                     Gợi ý khác
                   </button>
                   <button
-                    onClick={() => router.push('/recipes/select-to-cook')}
+                    onClick={() => router.push('/recipes')}
                     className="px-8 py-3 bg-gray-50 hover:bg-gray-100 border-2 border-gray-200 rounded-xl transition-all hover:scale-[1.02] font-bold text-gray-700"
                   >
                     Xem tất cả công thức
