@@ -39,13 +39,29 @@ export async function GET(request: NextRequest) {
       );
     }
 
+    const aitemsEnabled =
+      (process.env.NAVER_AITEMS_ENABLED || '').toLowerCase() === 'true';
+
+    if (!aitemsEnabled) {
+      console.info('ℹ️ AiTEMS disabled via env - returning fallback recommendations');
+      return getFallbackRecommendations(
+        userId,
+        count,
+        'Sẽ thêm AiTEMS sau.'
+      );
+    }
+
     // Check if AiTEMS credentials are configured
     const apiKey = process.env.NAVER_AITEMS_API_KEY;
     const serviceId = process.env.NAVER_AITEMS_SERVICE_ID;
 
     if (!apiKey || !serviceId || apiKey === 'your-aitems-api-key-here') {
       console.warn('⚠️ AiTEMS not configured - returning fallback recommendations');
-      return getFallbackRecommendations(userId, count);
+      return getFallbackRecommendations(
+        userId,
+        count,
+        'Chưa cấu hình AiTEMS. Vui lòng kiểm tra lại.'
+      );
     }
 
     // Call NAVER AiTEMS API
@@ -61,7 +77,11 @@ export async function GET(request: NextRequest) {
 
     if (!response.ok) {
       console.error('❌ AiTEMS API error:', response.status, await response.text());
-      return getFallbackRecommendations(userId, count);
+      return getFallbackRecommendations(
+        userId,
+        count,
+        'AiTEMS gặp lỗi. Đang trả về danh sách rỗng.'
+      );
     }
 
     const data: AiTemsResponse = await response.json();
@@ -93,7 +113,11 @@ export async function GET(request: NextRequest) {
     const count = parseInt(request.nextUrl.searchParams.get('count') || '10');
 
     if (userId) {
-      return getFallbackRecommendations(userId, count);
+      return getFallbackRecommendations(
+        userId,
+        count,
+        'Không lấy được gợi ý AI. Vui lòng thử lại sau.'
+      );
     }
 
     return NextResponse.json(
@@ -106,14 +130,14 @@ export async function GET(request: NextRequest) {
 /**
  * Fallback: Return message when AiTEMS is not configured
  */
-async function getFallbackRecommendations(userId: string, count: number) {
-  console.log('⚠️ AiTEMS not configured - returning empty recommendations');
+async function getFallbackRecommendations(userId: string, count: number, message?: string) {
+  console.log('⚠️ Using fallback recommendations (AiTEMS unavailable)');
 
   return NextResponse.json({
     source: 'fallback',
     count: 0,
     recommendations: [],
-    message: 'Vui lòng cấu hình NAVER AiTEMS để sử dụng tính năng gợi ý AI',
+    message: message || 'Tính năng gợi ý AI tạm thời không khả dụng.',
   });
 }
 

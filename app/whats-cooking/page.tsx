@@ -7,6 +7,21 @@ import type { Recipe } from '@/types/recipe';
 import { LoadingSpinner } from '@/components/ui';
 import { useAuth } from '@/contexts/AuthContext';
 
+type SuggestedDish = {
+  dishName: string;
+  usedIngredients: string[];
+  missingIngredients: string[];
+  isFromSavedRecipes: boolean;
+  recipeId?: string;
+  matchScore: number;
+};
+
+type IngredientSuggestionResponse = {
+  fromSavedRecipes: SuggestedDish[];
+  aiSuggestions: SuggestedDish[];
+  advice?: string;
+};
+
 export default function WhatsCookingPage() {
   const router = useRouter();
   const { user } = useAuth();
@@ -15,7 +30,8 @@ export default function WhatsCookingPage() {
   const [suggestedRecipes, setSuggestedRecipes] = useState<Recipe[]>([]);
   const [aiRecommendations, setAiRecommendations] = useState<Recipe[]>([]);
   const [aiLoading, setAiLoading] = useState(false);
-  const [showMode, setShowMode] = useState<'random' | 'ai'>('random');
+  const [showMode, setShowMode] = useState<'random' | 'ai' | 'ingredients'>('random');
+  const [aiMessage, setAiMessage] = useState('');
   const [storyInputs, setStoryInputs] = useState({
     dishName: '',
     ingredients: '',
@@ -25,10 +41,86 @@ export default function WhatsCookingPage() {
   const [storyLoading, setStoryLoading] = useState(false);
   const [storyError, setStoryError] = useState('');
 
+  // Ingredient-based cooking states
+  const [availableIngredients, setAvailableIngredients] = useState<string[]>([]);
+  const [newIngredient, setNewIngredient] = useState('');
+  const [ingredientAnalyzing, setIngredientAnalyzing] = useState(false);
+  const [ingredientError, setIngredientError] = useState('');
+  const [ingredientResult, setIngredientResult] = useState<IngredientSuggestionResponse | null>(null);
+  const [addedToListDialog, setAddedToListDialog] = useState<{ show: boolean; count: number }>({ show: false, count: 0 });
+
   useEffect(() => {
     loadRecipes();
     loadAiRecommendations();
   }, [user]);
+
+  // Ingredient-based cooking functions
+  const handleAddIngredient = () => {
+    const value = newIngredient.trim();
+    if (!value) return;
+    if (!availableIngredients.includes(value)) {
+      setAvailableIngredients((prev) => [...prev, value]);
+    }
+    setNewIngredient('');
+  };
+
+  const handleRemoveIngredient = (ingredient: string) => {
+    setAvailableIngredients((prev) => prev.filter((i) => i !== ingredient));
+  };
+
+  const handleAnalyzeIngredients = async () => {
+    if (availableIngredients.length === 0) {
+      setIngredientError('Hãy nhập ít nhất một nguyên liệu bạn có.');
+      return;
+    }
+    setIngredientError('');
+    setIngredientAnalyzing(true);
+    setIngredientResult(null);
+
+    try {
+      const recipesForAI = recipes.map((r) => ({
+        id: r.id,
+        dishName: r.dishName || r.recipeName || '',
+        ingredients: r.ingredientsList?.map((ing) =>
+          typeof ing === 'string' ? ing : ing.name
+        ) || [],
+      }));
+
+      const res = await fetch('/api/assistant/ingredients', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ingredients: availableIngredients,
+          savedRecipes: recipesForAI,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || 'Không thể phân tích nguyên liệu');
+      }
+      setIngredientResult(data);
+    } catch (error: any) {
+      setIngredientError(error.message || 'AI không thể phân tích lúc này. Thử lại sau nhé.');
+    } finally {
+      setIngredientAnalyzing(false);
+    }
+  };
+
+  const addMissingToShoppingList = (missingIngredients: string[]) => {
+    const saved = localStorage.getItem('shopping-list') || '[]';
+    const existingItems = JSON.parse(saved);
+    const newItems = missingIngredients.map((name, index) => ({
+      id: `item-${Date.now()}-${index}`,
+      name,
+      quantity: '',
+      unit: '',
+      category: 'khac',
+      checked: false,
+      createdAt: new Date().toISOString(),
+    }));
+    localStorage.setItem('shopping-list', JSON.stringify([...existingItems, ...newItems]));
+    setAddedToListDialog({ show: true, count: missingIngredients.length });
+  };
 
   const loadRecipes = async () => {
     try {
@@ -53,11 +145,16 @@ export default function WhatsCookingPage() {
 
     try {
       setAiLoading(true);
+      setAiMessage('');
       const response = await fetch(`/api/recommendations?userId=${user.id}&count=3`);
       const data = await response.json();
       setAiRecommendations(data.recommendations || []);
+      if (data.message) {
+        setAiMessage(data.message);
+      }
     } catch (error) {
       console.error('Error loading AI recommendations:', error);
+      setAiMessage('Không lấy được gợi ý AI lúc này. Thử lại sau nhé.');
     } finally {
       setAiLoading(false);
     }
@@ -211,10 +308,10 @@ export default function WhatsCookingPage() {
           </div>
 
           {/* Mode Switcher */}
-          <div className="flex justify-center gap-4 mb-8">
+          <div className="flex flex-wrap justify-center gap-3 mb-8">
             <button
               onClick={() => setShowMode('random')}
-              className={`px-6 py-3 rounded-xl font-bold transition-all ${
+              className={`px-5 py-2.5 rounded-xl font-bold transition-all text-sm ${
                 showMode === 'random'
                   ? 'bg-orange-100 border-2 border-orange-300 text-orange-700'
                   : 'bg-gray-50 border-2 border-gray-200 text-gray-700 hover:bg-gray-100'
@@ -224,13 +321,23 @@ export default function WhatsCookingPage() {
             </button>
             <button
               onClick={() => setShowMode('ai')}
-              className={`px-6 py-3 rounded-xl font-bold transition-all ${
+              className={`px-5 py-2.5 rounded-xl font-bold transition-all text-sm ${
                 showMode === 'ai'
                   ? 'bg-purple-100 border-2 border-purple-300 text-purple-700'
                   : 'bg-gray-50 border-2 border-gray-200 text-gray-700 hover:bg-gray-100'
               }`}
             >
-              AI thông minh
+              AI gợi ý
+            </button>
+            <button
+              onClick={() => setShowMode('ingredients')}
+              className={`px-5 py-2.5 rounded-xl font-bold transition-all text-sm ${
+                showMode === 'ingredients'
+                  ? 'bg-orange-100 border-2 border-orange-300 text-orange-700'
+                  : 'bg-gray-50 border-2 border-gray-200 text-gray-700 hover:bg-gray-100'
+              }`}
+            >
+              Từ nguyên liệu có sẵn
             </button>
           </div>
 
@@ -364,7 +471,7 @@ export default function WhatsCookingPage() {
                   ) : (
                     <div className="text-center py-12">
                       <p className="text-base text-gray-700 mb-6">
-                        Chưa có gợi ý AI. Hãy nấu thử một vài món để AI học sở thích của bạn!
+                        {aiMessage || 'Chưa có gợi ý AI. Hãy nấu thử một vài món để AI học sở thích của bạn!'}
                       </p>
                       <button
                         onClick={() => setShowMode('random')}
@@ -406,6 +513,211 @@ export default function WhatsCookingPage() {
                   </button>
                 </div>
               )}
+
+              {/* Ingredients Mode */}
+              {showMode === 'ingredients' && (
+                <div className="space-y-6">
+                  {/* Input Section */}
+                  <div className="bg-gradient-to-br from-orange-50 to-amber-50 border border-orange-100 rounded-2xl p-6 space-y-4">
+                    <div>
+                      <p className="text-lg font-semibold text-gray-900">Bạn có nguyên liệu gì?</p>
+                      <p className="text-sm text-gray-600">
+                        Nhập các nguyên liệu bạn đang có, AI sẽ gợi ý món ăn và list nguyên liệu còn thiếu.
+                      </p>
+                    </div>
+
+                    {/* Add Ingredient Input */}
+                    <div className="flex flex-col sm:flex-row gap-2">
+                      <input
+                        type="text"
+                        value={newIngredient}
+                        onChange={(e) => setNewIngredient(e.target.value)}
+                        onKeyDown={(e) => e.key === 'Enter' && handleAddIngredient()}
+                        placeholder="VD: Thịt heo, cà chua, hành..."
+                        className="flex-1 px-4 py-3 border-2 border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                      />
+                      <button
+                        type="button"
+                        onClick={handleAddIngredient}
+                        className="px-6 py-3 bg-orange-100 hover:bg-orange-200 border-2 border-orange-300 text-orange-700 rounded-xl font-bold transition-all hover:scale-[1.02]"
+                      >
+                        Thêm
+                      </button>
+                    </div>
+
+                    {/* Ingredient Tags */}
+                    {availableIngredients.length > 0 && (
+                      <div className="flex flex-wrap gap-2">
+                        {availableIngredients.map((ingredient) => (
+                          <span
+                            key={ingredient}
+                            className="px-3 py-1.5 bg-orange-100 rounded-full text-sm text-orange-700 font-medium flex items-center gap-2"
+                          >
+                            {ingredient}
+                            <button
+                              type="button"
+                              onClick={() => handleRemoveIngredient(ingredient)}
+                              className="text-orange-500 hover:text-orange-800"
+                            >
+                              ×
+                            </button>
+                          </span>
+                        ))}
+                        <button
+                          type="button"
+                          onClick={() => setAvailableIngredients([])}
+                          className="text-sm text-gray-500 hover:text-gray-700 underline"
+                        >
+                          Xóa tất cả
+                        </button>
+                      </div>
+                    )}
+
+                    {/* Analyze Button */}
+                    <button
+                      type="button"
+                      onClick={handleAnalyzeIngredients}
+                      disabled={ingredientAnalyzing || availableIngredients.length === 0}
+                      className="w-full py-3 bg-orange-100 hover:bg-orange-200 border-2 border-orange-300 text-orange-700 rounded-xl font-bold transition-all hover:scale-[1.02] disabled:opacity-60 disabled:cursor-not-allowed"
+                    >
+                      {ingredientAnalyzing ? 'AI đang phân tích...' : 'Gợi ý món ăn'}
+                    </button>
+
+                    {ingredientError && <p className="text-sm text-red-600">{ingredientError}</p>}
+                  </div>
+
+                  {/* Results */}
+                  {ingredientResult && (
+                    <div className="space-y-6">
+                      {/* From Saved Recipes */}
+                      {ingredientResult.fromSavedRecipes && ingredientResult.fromSavedRecipes.length > 0 && (
+                        <div className="space-y-4">
+                          <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2">
+                            <span className="text-xl">📖</span>
+                            Từ công thức đã lưu
+                          </h3>
+                          <div className="space-y-3">
+                            {ingredientResult.fromSavedRecipes.map((dish, index) => (
+                              <div
+                                key={`saved-${index}`}
+                                className="bg-white border-2 border-orange-200 rounded-2xl p-4"
+                              >
+                                <div className="flex items-start justify-between mb-3">
+                                  <div>
+                                    <p className="font-bold text-gray-900 text-lg">{dish.dishName}</p>
+                                    <p className="text-sm text-orange-600 font-medium">
+                                      Phù hợp {dish.matchScore}%
+                                    </p>
+                                  </div>
+                                  {dish.recipeId && (
+                                    <button
+                                      onClick={() => router.push(`/recipes/${dish.recipeId}`)}
+                                      className="px-3 py-1.5 bg-orange-100 text-orange-700 rounded-lg text-sm font-medium hover:bg-orange-200"
+                                    >
+                                      Xem công thức
+                                    </button>
+                                  )}
+                                </div>
+                                <div className="space-y-2 text-sm">
+                                  <div>
+                                    <span className="text-gray-600">Nguyên liệu có sẵn: </span>
+                                    <span className="text-orange-700 font-medium">
+                                      {dish.usedIngredients.join(', ')}
+                                    </span>
+                                  </div>
+                                  {dish.missingIngredients.length > 0 && (
+                                    <div className="flex items-start justify-between gap-2">
+                                      <div className="flex-1">
+                                        <span className="text-gray-600">Còn thiếu: </span>
+                                        <span className="text-orange-600 font-medium">
+                                          {dish.missingIngredients.join(', ')}
+                                        </span>
+                                      </div>
+                                      <button
+                                        onClick={() => addMissingToShoppingList(dish.missingIngredients)}
+                                        className="text-xs px-2 py-1 bg-orange-100 text-orange-700 rounded-lg hover:bg-orange-200 whitespace-nowrap"
+                                      >
+                                        + Đẩy qua Trợ lý đi chợ
+                                      </button>
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* AI Suggestions */}
+                      {ingredientResult.aiSuggestions && ingredientResult.aiSuggestions.length > 0 && (
+                        <div className="space-y-4">
+                          <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2">
+                            <span className="text-xl">✨</span>
+                            Gợi ý từ AI
+                          </h3>
+                          <div className="space-y-3">
+                            {ingredientResult.aiSuggestions.map((dish, index) => (
+                              <div
+                                key={`ai-${index}`}
+                                className="bg-white border-2 border-purple-200 rounded-2xl p-4"
+                              >
+                                <div className="flex items-start justify-between mb-3">
+                                  <div>
+                                    <p className="font-bold text-gray-900 text-lg">{dish.dishName}</p>
+                                    <p className="text-sm text-purple-600 font-medium">
+                                      Phù hợp {dish.matchScore}%
+                                    </p>
+                                  </div>
+                                </div>
+                                <div className="space-y-2 text-sm">
+                                  <div>
+                                    <span className="text-gray-600">Nguyên liệu có sẵn: </span>
+                                    <span className="text-green-700 font-medium">
+                                      {dish.usedIngredients.join(', ')}
+                                    </span>
+                                  </div>
+                                  {dish.missingIngredients.length > 0 && (
+                                    <div className="flex items-start justify-between gap-2">
+                                      <div className="flex-1">
+                                        <span className="text-gray-600">Còn thiếu: </span>
+                                        <span className="text-orange-600 font-medium">
+                                          {dish.missingIngredients.join(', ')}
+                                        </span>
+                                      </div>
+                                      <button
+                                        onClick={() => addMissingToShoppingList(dish.missingIngredients)}
+                                        className="text-xs px-2 py-1 bg-orange-100 text-orange-700 rounded-lg hover:bg-orange-200 whitespace-nowrap"
+                                      >
+                                        + Đẩy qua Trợ lý đi chợ
+                                      </button>
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Advice */}
+                      {ingredientResult.advice && (
+                        <div className="bg-orange-50 border border-orange-200 rounded-2xl p-4">
+                          <p className="text-sm font-bold text-gray-900 mb-1">Mẹo từ AI</p>
+                          <p className="text-sm text-gray-600 whitespace-pre-line">{ingredientResult.advice}</p>
+                        </div>
+                      )}
+
+                      {/* No results */}
+                      {(!ingredientResult.fromSavedRecipes || ingredientResult.fromSavedRecipes.length === 0) &&
+                        (!ingredientResult.aiSuggestions || ingredientResult.aiSuggestions.length === 0) && (
+                        <div className="text-center py-8">
+                          <p className="text-gray-500">AI không tìm thấy món phù hợp. Hãy thử thêm nguyên liệu khác!</p>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
             </>
           )}
         </div>
@@ -420,6 +732,42 @@ export default function WhatsCookingPage() {
           </button>
         </div>
       </main>
+
+      {/* Success Dialog */}
+      {addedToListDialog.show && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl p-6 max-w-sm w-full shadow-xl">
+            <div className="text-center mb-6">
+              <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+              </div>
+              <h3 className="text-lg font-bold text-gray-900 mb-2">Thêm thành công!</h3>
+              <p className="text-gray-600">
+                Đã thêm {addedToListDialog.count} nguyên liệu vào danh sách đi chợ.
+              </p>
+            </div>
+            <div className="flex flex-col gap-3">
+              <button
+                onClick={() => {
+                  setAddedToListDialog({ show: false, count: 0 });
+                  router.push('/shopping-assistant');
+                }}
+                className="w-full py-3 bg-orange-100 hover:bg-orange-200 border-2 border-orange-300 text-orange-700 rounded-xl font-bold transition-all"
+              >
+                Qua trang Trợ lý đi chợ
+              </button>
+              <button
+                onClick={() => setAddedToListDialog({ show: false, count: 0 })}
+                className="w-full py-3 bg-gray-50 hover:bg-gray-100 border-2 border-gray-200 text-gray-700 rounded-xl font-bold transition-all"
+              >
+                Ở lại đây
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
