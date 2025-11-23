@@ -813,16 +813,16 @@ export async function searchRecipesByMood(
     }))
     .slice(0, 20); // Giới hạn 20 công thức để tránh token limit
 
-  const prompt = `Người dùng đang có tâm trạng/mong muốn: "${userMood}"
+  const prompt = `Người dùng đang có tâm trạng: "${userMood}"
 
 Danh sách công thức:
 ${JSON.stringify(recipesInfo, null, 2)}
 
-Hãy tìm 3-5 công thức PHÙ HỢP NHẤT với tâm trạng người dùng.
+Hãy chọn 3-5 món PHÙ HỢP NHẤT với tâm trạng người dùng.
 
 Xem xét:
 - emotionTags của mỗi món
-- Tính chất món ăn (ấm, mát, nhanh, cầu kỳ...)
+- Tính chất món ăn (ấm, mát, bổ dưỡng, nhẹ nhàng...)
 - Hoàn cảnh phù hợp
 
 Trả về JSON:
@@ -833,7 +833,7 @@ Trả về JSON:
       "dishName": "Tên món",
       "matchScore": 85,
       "matchedTags": ["tag1", "tag2"],
-      "emotionalConnection": "Lý do món này phù hợp với tâm trạng (1 câu ngắn)"
+      "emotionalConnection": "Lời khuyên dân gian về món này (bắt đầu bằng 'Theo mẹ,' hoặc 'Theo ông bà ta,' hoặc 'Theo dân gian,')"
     }
   ]
 }
@@ -845,7 +845,26 @@ Sắp xếp theo matchScore giảm dần. JSON thuần, không markdown.`;
       messages: [
         {
           role: 'system',
-          content: 'Bạn là chuyên gia tâm lý ẩm thực, hiểu mối liên hệ giữa món ăn và cảm xúc. Trả về JSON hợp lệ.',
+          content: `Bạn là chuyên gia ẩm thực Việt Nam, hiểu mối liên hệ giữa món ăn và cảm xúc.
+
+"emotionalConnection" PHẢI bắt đầu bằng một trong các cụm từ sau (đa dạng, không lặp lại):
+- "Theo mẹ, ..."
+- "Theo bà, ..."
+- "Theo bà ngoại, ..."
+- "Theo bà nội, ..."
+- "Theo ngoại, ..."
+- "Theo ông bà ta, ..."
+- "Theo dân gian, ..."
+- "Theo kinh nghiệm, ..."
+- "Theo người xưa, ..."
+
+Ví dụ:
+- "Theo mẹ, khi mệt mỏi nên ăn cháo nóng để lấy lại sức"
+- "Theo bà ngoại, canh chua giúp giải nhiệt ngày nóng"
+- "Theo dân gian, gà hầm sâm bổ dưỡng khi người yếu"
+- "Theo ông bà ta, phở nóng buổi sáng tốt cho tiêu hóa"
+
+Mỗi món dùng cụm từ khác nhau để đa dạng. Trả về JSON hợp lệ.`,
         },
         {
           role: 'user',
