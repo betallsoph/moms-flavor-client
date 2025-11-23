@@ -30,6 +30,7 @@ export interface Recipe {
   tips?: string;
   coverImage?: string;
   galleryImages?: string[];
+  emotionTags?: string[]; // Emotional tags for mood-based search
   createdAt: string;
   updatedAt?: string;
 }

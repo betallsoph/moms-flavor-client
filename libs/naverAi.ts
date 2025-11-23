@@ -458,40 +458,44 @@ export async function generateSmartShoppingList({
   }));
 
   // Tạo prompt cho AI gợi ý bổ sung
-  const savedDishNames = dishes.filter(d => d.isFromSavedRecipe).map(d => d.dishName);
-  const allDishNames = [...savedDishNames, ...otherDishes];
   const existingIngredients = Array.from(ingredientMap.keys()).join(', ');
+
+  // Nếu không có món nào cần AI ước lượng, trả về kết quả trống
+  if (otherDishes.length === 0) {
+    return {
+      fromRecipes,
+      aiSuggestions: [],
+      advice: 'Tất cả nguyên liệu đã có trong công thức đã lưu.',
+    };
+  }
 
   const data = await callClovaStudio(CLOVA_STUDIO_LONG_MODEL, {
     messages: [
       {
         role: 'system',
-        content: `Bạn là chuyên gia dinh dưỡng và nấu ăn Việt Nam.
+        content: `Bạn là chuyên gia nấu ăn Việt Nam.
 
-NHIỆM VỤ: Gợi ý nguyên liệu BỔ SUNG để bữa ăn trọn vẹn hơn.
+NHIỆM VỤ: Ước lượng nguyên liệu cần thiết cho các món ăn CHƯA CÓ CÔNG THỨC.
 
-Người dùng đã có sẵn nguyên liệu từ công thức: ${existingIngredients || 'Chưa có'}
+Người dùng đã có nguyên liệu từ công thức đã lưu: ${existingIngredients || 'Không có'}
 
-Hãy gợi ý THÊM những thứ còn thiếu hoặc giúp bữa ăn ngon hơn:
-- Rau ăn kèm (xà lách, rau thơm, dưa leo...)
-- Nước chấm phù hợp
-- Món canh/món phụ nếu thiếu
-- Đồ uống, tráng miệng đơn giản
+CHỈ gợi ý nguyên liệu cho các món CHƯA CÓ CÔNG THỨC.
+KHÔNG gợi ý thêm món ăn kèm, đồ uống, hay tráng miệng.
+KHÔNG gợi ý những nguyên liệu đã có trong danh sách trên.
 
-KHÔNG gợi ý những thứ đã có trong danh sách nguyên liệu.
-
-QUY TẮC SỐ LƯỢNG:
+QUY TẮC:
 - Tính cho ${people} người, ${meals} bữa
-- Dùng đơn vị chợ Việt Nam (bó, củ, gói, chai)
-- Làm tròn hợp lý
+- Dùng đơn vị chợ Việt Nam (bó, củ, gói, chai, gram, kg)
+- Chỉ liệt kê nguyên liệu CHÍNH của món đó
+- Không liệt kê gia vị cơ bản (muối, tiêu, đường, dầu ăn, nước mắm)
 
 OUTPUT JSON:
 {
   "aiSuggestions": [
     {
-      "category": "Rau ăn kèm/Nước chấm/Khác",
+      "category": "Thịt/Cá/Rau củ/Khác",
       "items": [
-        { "name": "Tên", "quantity": "Số lượng", "reasoning": "Lý do gợi ý" }
+        { "name": "Tên nguyên liệu", "quantity": "Số lượng", "reasoning": "Dùng cho món X" }
       ]
     }
   ],
@@ -500,10 +504,9 @@ OUTPUT JSON:
       },
       {
         role: 'user',
-        content: `Thực đơn: ${allDishNames.join(', ')}
-${otherDishes.length > 0 ? `Món chưa có công thức (cần AI ước lượng): ${otherDishes.join(', ')}` : ''}
+        content: `Các món CHƯA CÓ CÔNG THỨC cần ước lượng nguyên liệu: ${otherDishes.join(', ')}
 
-Gợi ý nguyên liệu bổ sung cho bữa ăn trọn vẹn.`,
+Hãy liệt kê nguyên liệu cần mua cho các món này.`,
       },
     ],
     maxTokens: 1200,
@@ -709,5 +712,172 @@ QUY TẮC QUAN TRỌNG:
       aiSuggestions: [],
       advice: '',
     };
+  }
+}
+
+// ============================================
+// EMOTIONAL SEARCH - Tìm kiếm theo cảm xúc
+// ============================================
+
+/**
+ * Tạo emotion tags cho công thức khi lưu
+ */
+export async function generateEmotionTags(
+  dishName: string,
+  storyOrNote?: string
+): Promise<string[]> {
+  const prompt = `Phân tích món ăn và tạo emotion tags.
+
+Món ăn: "${dishName}"
+${storyOrNote ? `Câu chuyện/Ghi chú: "${storyOrNote}"` : ''}
+
+Hãy tạo 3-5 emotion tags phù hợp với món ăn này.
+
+Tags nên bao gồm:
+- Cảm xúc: ấm áp, nhớ nhà, vui vẻ, an ủi, hạnh phúc, yêu thương...
+- Hoàn cảnh: mưa lạnh, sum vầy, một mình, bận rộn, cuối tuần...
+- Ký ức: tuổi thơ, mẹ nấu, bà ngoại, quê hương, ngày xưa...
+- Tính chất: đơn giản, cầu kỳ, nhanh gọn, thịnh soạn...
+
+Trả về JSON array thuần túy, ví dụ: ["ấm áp", "nhớ mẹ", "mưa lạnh", "tuổi thơ"]`;
+
+  try {
+    const data = await callClovaStudio(CLOVA_STUDIO_SHORT_MODEL, {
+      messages: [
+        {
+          role: 'system',
+          content: 'Bạn là chuyên gia phân tích cảm xúc ẩm thực Việt Nam. Trả về JSON array thuần túy.',
+        },
+        {
+          role: 'user',
+          content: prompt,
+        },
+      ],
+      temperature: 0.6,
+      maxTokens: 200,
+    });
+
+    const output =
+      data?.result?.outputText ||
+      data?.result?.message?.content ||
+      data?.text ||
+      '';
+
+    const cleanJson = output.replace(/```json/gi, '').replace(/```/g, '').trim();
+    const parsed = JSON.parse(cleanJson);
+
+    if (Array.isArray(parsed)) {
+      return parsed.filter((tag: any) => typeof tag === 'string').slice(0, 5);
+    }
+
+    return [];
+  } catch (error) {
+    console.warn('Failed to generate emotion tags:', error);
+    return [];
+  }
+}
+
+type RecipeForEmotionSearch = {
+  id: string;
+  dishName: string;
+  emotionTags?: string[];
+  description?: string;
+  specialNotes?: string;
+};
+
+type EmotionSearchResult = {
+  recipeId: string;
+  dishName: string;
+  matchScore: number;
+  matchedTags: string[];
+  emotionalConnection: string;
+};
+
+/**
+ * Tìm kiếm công thức theo tâm trạng người dùng
+ */
+export async function searchRecipesByMood(
+  userMood: string,
+  allRecipes: RecipeForEmotionSearch[]
+): Promise<EmotionSearchResult[]> {
+  if (!allRecipes || allRecipes.length === 0) {
+    return [];
+  }
+
+  const recipesInfo = allRecipes
+    .map(r => ({
+      id: r.id,
+      name: r.dishName,
+      tags: r.emotionTags || [],
+      notes: r.specialNotes || r.description || '',
+    }))
+    .slice(0, 20); // Giới hạn 20 công thức để tránh token limit
+
+  const prompt = `Người dùng đang có tâm trạng/mong muốn: "${userMood}"
+
+Danh sách công thức:
+${JSON.stringify(recipesInfo, null, 2)}
+
+Hãy tìm 3-5 công thức PHÙ HỢP NHẤT với tâm trạng người dùng.
+
+Xem xét:
+- emotionTags của mỗi món
+- Tính chất món ăn (ấm, mát, nhanh, cầu kỳ...)
+- Hoàn cảnh phù hợp
+
+Trả về JSON:
+{
+  "results": [
+    {
+      "recipeId": "id_công_thức",
+      "dishName": "Tên món",
+      "matchScore": 85,
+      "matchedTags": ["tag1", "tag2"],
+      "emotionalConnection": "Lý do món này phù hợp với tâm trạng (1 câu ngắn)"
+    }
+  ]
+}
+
+Sắp xếp theo matchScore giảm dần. JSON thuần, không markdown.`;
+
+  try {
+    const data = await callClovaStudio(CLOVA_STUDIO_LONG_MODEL, {
+      messages: [
+        {
+          role: 'system',
+          content: 'Bạn là chuyên gia tâm lý ẩm thực, hiểu mối liên hệ giữa món ăn và cảm xúc. Trả về JSON hợp lệ.',
+        },
+        {
+          role: 'user',
+          content: prompt,
+        },
+      ],
+      temperature: 0.5,
+      maxTokens: 800,
+    });
+
+    const output =
+      data?.result?.outputText ||
+      data?.result?.message?.content ||
+      data?.text ||
+      '';
+
+    const cleanJson = output.replace(/```json/gi, '').replace(/```/g, '').trim();
+    const parsed = JSON.parse(cleanJson);
+
+    if (parsed.results && Array.isArray(parsed.results)) {
+      return parsed.results.map((r: any) => ({
+        recipeId: r.recipeId || '',
+        dishName: r.dishName || '',
+        matchScore: r.matchScore || 0,
+        matchedTags: Array.isArray(r.matchedTags) ? r.matchedTags : [],
+        emotionalConnection: r.emotionalConnection || '',
+      }));
+    }
+
+    return [];
+  } catch (error) {
+    console.warn('Failed to search recipes by mood:', error);
+    return [];
   }
 }
