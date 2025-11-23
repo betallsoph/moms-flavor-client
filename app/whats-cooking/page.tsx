@@ -30,7 +30,7 @@ export default function WhatsCookingPage() {
   const [suggestedRecipes, setSuggestedRecipes] = useState<Recipe[]>([]);
   const [aiRecommendations, setAiRecommendations] = useState<Recipe[]>([]);
   const [aiLoading, setAiLoading] = useState(false);
-  const [showMode, setShowMode] = useState<'random' | 'ai' | 'ingredients'>('random');
+  const [showMode, setShowMode] = useState<'random' | 'ai' | 'ingredients' | 'mood'>('random');
   const [aiMessage, setAiMessage] = useState('');
   const [storyInputs, setStoryInputs] = useState({
     dishName: '',
@@ -48,6 +48,18 @@ export default function WhatsCookingPage() {
   const [ingredientError, setIngredientError] = useState('');
   const [ingredientResult, setIngredientResult] = useState<IngredientSuggestionResponse | null>(null);
   const [addedToListDialog, setAddedToListDialog] = useState<{ show: boolean; count: number }>({ show: false, count: 0 });
+
+  // Emotion-based search states
+  const [moodQuery, setMoodQuery] = useState('');
+  const [moodSearching, setMoodSearching] = useState(false);
+  const [moodError, setMoodError] = useState('');
+  const [moodResults, setMoodResults] = useState<{
+    recipeId: string;
+    dishName: string;
+    matchScore: number;
+    matchedTags: string[];
+    emotionalConnection: string;
+  }[]>([]);
 
   useEffect(() => {
     loadRecipes();
@@ -120,6 +132,50 @@ export default function WhatsCookingPage() {
     }));
     localStorage.setItem('shopping-list', JSON.stringify([...existingItems, ...newItems]));
     setAddedToListDialog({ show: true, count: missingIngredients.length });
+  };
+
+  // Emotion-based search function
+  const handleMoodSearch = async () => {
+    if (!moodQuery.trim()) {
+      setMoodError('Hãy nhập tâm trạng hoặc mong muốn của bạn.');
+      return;
+    }
+    if (recipes.length === 0) {
+      setMoodError('Bạn chưa có công thức nào. Hãy tạo công thức trước!');
+      return;
+    }
+
+    setMoodError('');
+    setMoodSearching(true);
+    setMoodResults([]);
+
+    try {
+      const recipesForAI = recipes.map((r) => ({
+        id: r.id,
+        dishName: r.dishName || r.recipeName || '',
+        emotionTags: r.emotionTags || [],
+        description: r.description || '',
+        specialNotes: r.specialNotes || '',
+      }));
+
+      const res = await fetch('/api/assistant/emotion-search', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          mood: moodQuery,
+          recipes: recipesForAI,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || 'Không thể tìm kiếm');
+      }
+      setMoodResults(data.results || []);
+    } catch (error: any) {
+      setMoodError(error.message || 'AI không thể tìm kiếm lúc này. Thử lại sau nhé.');
+    } finally {
+      setMoodSearching(false);
+    }
   };
 
   const loadRecipes = async () => {
@@ -339,6 +395,16 @@ export default function WhatsCookingPage() {
             >
               Từ nguyên liệu có sẵn
             </button>
+            <button
+              onClick={() => setShowMode('mood')}
+              className={`px-5 py-2.5 rounded-xl font-bold transition-all text-sm ${
+                showMode === 'mood'
+                  ? 'bg-rose-100 border-2 border-rose-300 text-rose-700'
+                  : 'bg-gray-50 border-2 border-gray-200 text-gray-700 hover:bg-gray-100'
+              }`}
+            >
+              Theo tâm trạng
+            </button>
           </div>
 
           {recipes.length === 0 ? (
@@ -357,10 +423,10 @@ export default function WhatsCookingPage() {
             <>
               {/* Description based on mode */}
               <p className="text-base text-gray-700 text-center mb-8">
-                {showMode === 'random'
-                  ? 'Dưới đây là những gợi ý ngẫu nhiên cho bạn hôm nay'
-                  : 'AI đã phân tích và gợi ý những món phù hợp nhất với bạn'
-                }
+                {showMode === 'random' && 'Dưới đây là những gợi ý ngẫu nhiên cho bạn hôm nay'}
+                {showMode === 'ai' && 'AI đã phân tích và gợi ý những món phù hợp nhất với bạn'}
+                {showMode === 'ingredients' && 'Nhập nguyên liệu bạn có, AI sẽ gợi ý món phù hợp'}
+                {showMode === 'mood' && 'Hãy cho AI biết tâm trạng của bạn, AI sẽ tìm món ăn phù hợp'}
               </p>
 
               {/* Random Mode */}
@@ -714,6 +780,142 @@ export default function WhatsCookingPage() {
                           <p className="text-gray-500">AI không tìm thấy món phù hợp. Hãy thử thêm nguyên liệu khác!</p>
                         </div>
                       )}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Mood/Emotion Mode */}
+              {showMode === 'mood' && (
+                <div className="space-y-6">
+                  {/* Input Section */}
+                  <div className="bg-gradient-to-br from-rose-50 to-pink-50 border border-rose-100 rounded-2xl p-6 space-y-4">
+                    <div>
+                      <p className="text-lg font-semibold text-gray-900">Hôm nay bạn cảm thấy thế nào?</p>
+                      <p className="text-sm text-gray-600">
+                        Nhập tâm trạng, cảm xúc hoặc hoàn cảnh của bạn. AI sẽ tìm món ăn phù hợp nhất.
+                      </p>
+                    </div>
+
+                    {/* Mood Input */}
+                    <div className="flex flex-col sm:flex-row gap-2">
+                      <input
+                        type="text"
+                        value={moodQuery}
+                        onChange={(e) => setMoodQuery(e.target.value)}
+                        onKeyDown={(e) => e.key === 'Enter' && handleMoodSearch()}
+                        placeholder="VD: Mệt mỏi, cần món gì ấm áp / Nhớ nhà / Trời mưa lạnh..."
+                        className="flex-1 px-4 py-3 border-2 border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-rose-400 focus:border-transparent"
+                      />
+                      <button
+                        type="button"
+                        onClick={handleMoodSearch}
+                        disabled={moodSearching}
+                        className="px-6 py-3 bg-rose-100 hover:bg-rose-200 border-2 border-rose-300 text-rose-700 rounded-xl font-bold transition-all hover:scale-[1.02] disabled:opacity-60 disabled:cursor-not-allowed"
+                      >
+                        {moodSearching ? 'Đang tìm...' : 'Tìm món'}
+                      </button>
+                    </div>
+
+                    {/* Quick Mood Suggestions */}
+                    <div className="flex flex-wrap gap-2">
+                      <span className="text-sm text-gray-500">Gợi ý:</span>
+                      {['Nhớ nhà', 'Mệt mỏi', 'Vui vẻ', 'Trời lạnh', 'Buồn', 'Cuối tuần thư giãn'].map((mood) => (
+                        <button
+                          key={mood}
+                          type="button"
+                          onClick={() => setMoodQuery(mood)}
+                          className="px-3 py-1 bg-white border border-rose-200 rounded-full text-sm text-rose-600 hover:bg-rose-50 transition-all"
+                        >
+                          {mood}
+                        </button>
+                      ))}
+                    </div>
+
+                    {moodError && <p className="text-sm text-red-600">{moodError}</p>}
+                  </div>
+
+                  {/* Results */}
+                  {moodResults.length > 0 && (
+                    <div className="space-y-4">
+                      <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2">
+                        <span className="text-xl">💝</span>
+                        Món ăn phù hợp với tâm trạng của bạn
+                      </h3>
+                      <div className="space-y-3">
+                        {moodResults.map((result, index) => {
+                          const recipe = recipes.find((r) => r.id === result.recipeId);
+                          return (
+                            <div
+                              key={result.recipeId}
+                              className="bg-white border-2 border-rose-200 rounded-2xl p-4 hover:border-rose-400 hover:shadow-lg transition-all cursor-pointer"
+                              onClick={() => router.push(`/recipes/${result.recipeId}`)}
+                            >
+                              <div className="flex items-start gap-4">
+                                {/* Image */}
+                                <div className="w-20 h-20 rounded-xl overflow-hidden border border-gray-200 flex-shrink-0 bg-gray-50">
+                                  {recipe?.coverImage ? (
+                                    <img
+                                      src={recipe.coverImage}
+                                      alt={result.dishName}
+                                      className="w-full h-full object-cover"
+                                    />
+                                  ) : (
+                                    <div className="w-full h-full flex items-center justify-center text-2xl">
+                                      🍲
+                                    </div>
+                                  )}
+                                </div>
+
+                                {/* Info */}
+                                <div className="flex-1">
+                                  <div className="flex items-center gap-2 mb-1">
+                                    <p className="font-bold text-gray-900 text-lg">{result.dishName}</p>
+                                    <span className="text-sm text-rose-600 font-medium">
+                                      {result.matchScore}% phù hợp
+                                    </span>
+                                  </div>
+                                  <p className="text-sm text-gray-600 mb-2 italic">
+                                    "{result.emotionalConnection}"
+                                  </p>
+                                  {result.matchedTags.length > 0 && (
+                                    <div className="flex flex-wrap gap-1">
+                                      {result.matchedTags.map((tag) => (
+                                        <span
+                                          key={tag}
+                                          className="px-2 py-0.5 bg-rose-100 text-rose-700 rounded-full text-xs"
+                                        >
+                                          {tag}
+                                        </span>
+                                      ))}
+                                    </div>
+                                  )}
+                                </div>
+
+                                {/* Action */}
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleCookNow(result.recipeId);
+                                  }}
+                                  className="px-4 py-2 bg-rose-100 hover:bg-rose-200 border-2 border-rose-300 text-rose-700 rounded-xl font-bold text-sm transition-all"
+                                >
+                                  Nấu ngay
+                                </button>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* No results message */}
+                  {!moodSearching && moodQuery && moodResults.length === 0 && !moodError && (
+                    <div className="text-center py-8">
+                      <p className="text-gray-500">
+                        Không tìm thấy món phù hợp. Hãy thử mô tả tâm trạng khác hoặc thêm công thức mới với emotion tags!
+                      </p>
                     </div>
                   )}
                 </div>

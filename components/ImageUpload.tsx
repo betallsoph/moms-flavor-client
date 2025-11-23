@@ -21,6 +21,8 @@
 'use client';
 
 import { useState, useRef } from 'react';
+import Lottie from 'lottie-react';
+import imageLoadingAnimation from '@/assets/lottie/image-loading.json';
 import { auth } from '@/libs/firebase';
 
 interface ImageUploadProps {
@@ -223,6 +225,17 @@ export default function ImageUpload({
             </>
           ) : null}
         </label>
+        {uploading && !preview && (
+          <div className="mt-4 flex flex-col items-center text-gray-600">
+            <Lottie
+              animationData={imageLoadingAnimation}
+              loop
+              autoplay
+              style={{ width: 120, height: 120 }}
+            />
+            <p className="text-sm font-medium">Đang tải ảnh lên...</p>
+          </div>
+        )}
       </div>
 
       {/* Preview */}
@@ -233,6 +246,17 @@ export default function ImageUpload({
             alt="Preview"
             className="w-full h-64 object-cover rounded-lg border-2 border-gray-200"
           />
+          {uploading && (
+            <div className="absolute inset-0 rounded-lg bg-white/80 backdrop-blur-sm flex flex-col items-center justify-center text-gray-700">
+              <Lottie
+                animationData={imageLoadingAnimation}
+                loop
+                autoplay
+                style={{ width: 140, height: 140 }}
+              />
+              <p className="text-sm font-semibold">Đang tải ảnh lên...</p>
+            </div>
+          )}
           {!uploading && (
             <button
               onClick={handleClear}

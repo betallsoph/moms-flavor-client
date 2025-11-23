@@ -77,7 +77,7 @@ export default function ProfilePage() {
   };
 
   if (loading) {
-    return <LoadingSpinner color="border-blue-600" />;
+    return <LoadingSpinner />;
   }
 
   if (!user) {

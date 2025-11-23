@@ -32,7 +32,7 @@ export default function WelcomePage() {
   const router = useRouter();
 
   if (loading) {
-    return <LoadingSpinner color="border-blue-600" />;
+    return <LoadingSpinner />;
   }
 
   return (

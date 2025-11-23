@@ -63,13 +63,38 @@ export default function NewRecipePage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    
-    // Create recipe using service
-    const newRecipe = await RecipeService.create(formData as Omit<Recipe, 'id' | 'createdAt'>);
-    
-    setLoading(false);
-    // Redirect to confirmation page with recipe ID
-    router.push(`/recipes/confirm?id=${newRecipe.id}`);
+
+    try {
+      // Generate emotion tags using AI
+      let emotionTags: string[] = [];
+      try {
+        const response = await fetch('/api/assistant/emotion-tags', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            dishName: formData.dishName,
+            storyOrNote: formData.description,
+          }),
+        });
+        if (response.ok) {
+          const data = await response.json();
+          emotionTags = data.tags || [];
+        }
+      } catch (err) {
+        console.warn('Could not generate emotion tags:', err);
+      }
+
+      // Create recipe with emotion tags
+      const newRecipe = await RecipeService.create({
+        ...formData,
+        emotionTags,
+      } as Omit<Recipe, 'id' | 'createdAt'>);
+
+      // Redirect to confirmation page with recipe ID
+      router.push(`/recipes/confirm?id=${newRecipe.id}`);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (

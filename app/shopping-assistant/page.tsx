@@ -467,18 +467,19 @@ export default function ShoppingAssistantPage() {
                   </div>
                 )}
 
-                {/* AI gợi ý bổ sung */}
+                {/* Nguyên liệu cho món chưa có công thức */}
                 {aiResult.aiSuggestions && aiResult.aiSuggestions.length > 0 && (
                   <div className="space-y-4">
                     <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2">
                       <span className="text-xl">✨</span>
-                      AI gợi ý bổ sung cho bữa ăn trọn vẹn
+                      Nguyên liệu cho món chưa có công thức
+                      <span className="text-sm font-normal text-purple-600">(AI ước lượng)</span>
                     </h3>
                     {aiResult.aiSuggestions.map((category, catIndex) => (
                       <div key={`ai-${category.category}-${catIndex}`} className="bg-white border-2 border-purple-200 rounded-2xl p-4">
                         <div className="flex items-center justify-between mb-4">
                           <p className="font-bold text-gray-900">{category.category}</p>
-                          <span className="text-xs text-purple-600 font-medium">{category.items.length} gợi ý</span>
+                          <span className="text-xs text-purple-600 font-medium">{category.items.length} nguyên liệu</span>
                         </div>
                         <div className="space-y-3">
                           {category.items.map((item, itemIndex) => {

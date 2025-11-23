@@ -17,7 +17,7 @@ export default function HomePage() {
   }, [user, loading, router]);
 
   if (loading) {
-    return <LoadingSpinner color="border-blue-600" />;
+    return <LoadingSpinner />;
   }
 
   if (!user) {

@@ -1,27 +1,32 @@
 import React from 'react';
+import Lottie from 'lottie-react';
+import cookingAnimation from '@/assets/lottie/cooking-loading.json';
 
 type Props = {
   message?: string;
   size?: 'sm' | 'md' | 'lg';
-  color?: string;
 };
 
-export default function LoadingSpinner({ 
-  message = 'Đang tải...', 
+export default function LoadingSpinner({
+  message = 'Đang tải...',
   size = 'md',
-  color = 'border-orange-600'
 }: Props) {
-  const sizeClasses = {
-    sm: 'h-6 w-6',
-    md: 'h-8 w-8',
-    lg: 'h-12 w-12',
+  const sizeValues: Record<NonNullable<Props['size']>, number> = {
+    sm: 80,
+    md: 140,
+    lg: 200,
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center">
+    <div className="flex min-h-screen items-center justify-center p-6">
       <div className="text-center">
-        <div className={`inline-block ${sizeClasses[size]} animate-spin rounded-full border-4 border-solid ${color} border-r-transparent`}></div>
-        {message && <p className="mt-4 text-gray-600">{message}</p>}
+        <Lottie
+          animationData={cookingAnimation}
+          loop
+          autoplay
+          style={{ width: sizeValues[size], height: sizeValues[size], margin: '0 auto' }}
+        />
+        {message && <p className="mt-2 text-sm text-gray-600">{message}</p>}
       </div>
     </div>
   );
