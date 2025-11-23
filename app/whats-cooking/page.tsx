@@ -426,7 +426,7 @@ export default function WhatsCookingPage() {
                 {showMode === 'random' && 'Dưới đây là những gợi ý ngẫu nhiên cho bạn hôm nay'}
                 {showMode === 'ai' && 'AI đã phân tích và gợi ý những món phù hợp nhất với bạn'}
                 {showMode === 'ingredients' && 'Nhập nguyên liệu bạn có, AI sẽ gợi ý món phù hợp'}
-                {showMode === 'mood' && 'Hãy cho AI biết tâm trạng của bạn, AI sẽ tìm món ăn phù hợp'}
+                {showMode === 'mood' && 'Hãy cho biết tâm trạng của bạn, AI sẽ tìm món ăn phù hợp'}
               </p>
 
               {/* Random Mode */}
@@ -840,7 +840,7 @@ export default function WhatsCookingPage() {
                     <div className="space-y-4">
                       <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2">
                         <span className="text-xl">💝</span>
-                        Món ăn phù hợp với tâm trạng của bạn
+                        Món phù hợp với tâm trạng của bạn
                       </h3>
                       <div className="space-y-3">
                         {moodResults.map((result, index) => {
@@ -914,7 +914,7 @@ export default function WhatsCookingPage() {
                   {!moodSearching && moodQuery && moodResults.length === 0 && !moodError && (
                     <div className="text-center py-8">
                       <p className="text-gray-500">
-                        Không tìm thấy món phù hợp. Hãy thử mô tả tâm trạng khác hoặc thêm công thức mới với emotion tags!
+                        Không tìm thấy món phù hợp. Hãy thử mô tả tâm trạng khác hoặc thêm công thức mới!
                       </p>
                     </div>
                   )}
