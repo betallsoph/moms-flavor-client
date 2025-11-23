@@ -1,9 +1,7 @@
-'use client';
+import { NextResponse } from 'next/server';
+import { createRecipe } from '@/libs/firestore';
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { useAuth } from '@/contexts/AuthContext';
-import { RecipeService } from '@/libs/recipeService';
+export const runtime = 'nodejs';
 
 const sampleRecipes = [
   {
@@ -268,97 +266,44 @@ const sampleRecipes = [
   },
 ];
 
-export default function AdminPage() {
-  const router = useRouter();
-  const { user } = useAuth();
-  const [seeding, setSeeding] = useState(false);
-  const [result, setResult] = useState<{ success: boolean; message: string } | null>(null);
+export async function POST(request: Request) {
+  try {
+    // Check for admin key (simple protection)
+    const { searchParams } = new URL(request.url);
+    const adminKey = searchParams.get('key');
 
-  const handleSeedRecipes = async () => {
-    if (!user) {
-      setResult({ success: false, message: 'Bạn cần đăng nhập trước!' });
-      return;
+    if (adminKey !== 'seed-moms-flavor-2024') {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    setSeeding(true);
-    setResult(null);
+    const body = await request.json().catch(() => ({}));
+    const userId = body.userId;
 
-    try {
-      let count = 0;
-      for (const recipe of sampleRecipes) {
-        await RecipeService.create(recipe);
-        count++;
-      }
-      setResult({ success: true, message: `Đã tạo thành công ${count} công thức mẫu!` });
-    } catch (error: any) {
-      setResult({ success: false, message: `Lỗi: ${error.message}` });
-    } finally {
-      setSeeding(false);
+    if (!userId) {
+      return NextResponse.json({ error: 'userId is required' }, { status: 400 });
     }
-  };
 
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-orange-50 to-amber-50 p-8">
-      <div className="max-w-2xl mx-auto">
-        <div className="bg-white rounded-2xl shadow-lg border-2 border-orange-200 p-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Trang Quản Trị</h1>
-          <p className="text-gray-600 mb-8">Quản lý dữ liệu ứng dụng</p>
+    const createdRecipes = [];
 
-          {user ? (
-            <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-xl">
-              <p className="text-green-700">Đang đăng nhập: <strong>{user.email}</strong></p>
-            </div>
-          ) : (
-            <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl">
-              <p className="text-red-700">Chưa đăng nhập. Vui lòng đăng nhập trước.</p>
-            </div>
-          )}
+    for (const recipe of sampleRecipes) {
+      const recipeId = await createRecipe(userId, recipe);
+      createdRecipes.push({ id: recipeId, name: recipe.dishName });
+    }
 
-          <div className="space-y-6">
-            <div className="p-6 bg-orange-50 border border-orange-200 rounded-xl">
-              <h2 className="text-lg font-bold text-gray-900 mb-2">Seed Công Thức Mẫu</h2>
-              <p className="text-sm text-gray-600 mb-4">
-                Thêm 10 công thức món Việt Nam vào database với đầy đủ nguyên liệu,
-                các bước nấu, tips và hình ảnh.
-              </p>
-              <ul className="text-sm text-gray-600 mb-4 list-disc list-inside">
-                <li>Thịt kho trứng cút</li>
-                <li>Phở bò Hà Nội</li>
-                <li>Cơm tấm sườn bì chả</li>
-                <li>Bún chả Hà Nội</li>
-                <li>Canh chua cá lóc</li>
-                <li>Gà kho gừng</li>
-                <li>Chả giò (Nem rán)</li>
-                <li>Bò lúc lắc</li>
-                <li>Bánh xèo</li>
-                <li>Cà ri gà</li>
-              </ul>
-              <button
-                onClick={handleSeedRecipes}
-                disabled={seeding || !user}
-                className="w-full py-3 bg-orange-100 hover:bg-orange-200 border-2 border-orange-300 text-orange-700 rounded-xl font-bold transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {seeding ? 'Đang tạo...' : 'Tạo 10 Công Thức Mẫu'}
-              </button>
-            </div>
+    return NextResponse.json({
+      success: true,
+      message: `Created ${createdRecipes.length} sample recipes`,
+      recipes: createdRecipes,
+    });
+  } catch (error: any) {
+    console.error('Seed error:', error);
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+}
 
-            {result && (
-              <div className={`p-4 rounded-xl ${result.success ? 'bg-green-50 border border-green-200' : 'bg-red-50 border border-red-200'}`}>
-                <p className={result.success ? 'text-green-700' : 'text-red-700'}>{result.message}</p>
-              </div>
-            )}
-          </div>
-
-          <div className="mt-8 pt-6 border-t border-gray-200">
-            <button
-              onClick={() => router.push('/home')}
-              className="w-full py-3 bg-gray-50 hover:bg-gray-100 border-2 border-gray-200 text-gray-700 rounded-xl font-bold transition-all"
-            >
-              Quay lại Trang Chủ
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
+export async function GET() {
+  return NextResponse.json({
+    message: 'POST to this endpoint with { userId: "your-user-id" } and ?key=seed-moms-flavor-2024',
+    sampleCount: sampleRecipes.length,
+  });
 }

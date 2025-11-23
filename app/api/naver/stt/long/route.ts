@@ -18,7 +18,6 @@ export async function POST(request: NextRequest) {
 
     const transcription = await transcribeLongSpeechFromUrl(audioUrl, {
       lang,
-      completion: 'sync',
     });
 
     if (!transcription.text) {

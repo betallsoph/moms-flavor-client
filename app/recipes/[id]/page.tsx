@@ -213,7 +213,8 @@ export default function RecipeDetailPage() {
       setUploading(true);
 
       // Get current user ID from auth
-      const userId = authService.getCurrentUser()?.id;
+      const currentUser = await authService.getCurrentUser();
+      const userId = currentUser?.id;
       if (!userId) {
         setUploading(false);
         alert('Bạn cần đăng nhập để upload hình ảnh.');

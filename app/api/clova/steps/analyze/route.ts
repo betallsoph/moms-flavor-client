@@ -20,9 +20,9 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(
       {
         success: true,
-        title: result.title,
+        action: result.action,
+        duration: result.duration,
         note: result.note,
-        tags: result.tags || [],
       },
       { status: 200 }
     );

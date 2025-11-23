@@ -48,6 +48,20 @@ type ClovaStudioPayload = {
   includeAiFilters?: boolean;
 };
 
+type SmartShoppingItem = {
+  name: string;
+  quantity: string;
+  reasoning?: string;
+};
+
+export type SmartShoppingResult = {
+  shopping_list: Array<{
+    category: string;
+    items: SmartShoppingItem[];
+  }>;
+  advice?: string;
+};
+
 export async function transcribeSpeechWithClova(
   input: File | Buffer,
   options: ClovaShortOptions = {}
@@ -65,10 +79,13 @@ export async function transcribeSpeechWithClova(
     process.env.NAVER_STT_LANG ||
     'Vi'; // default to Vietnamese but can be overridden
 
-  const buffer =
-    input instanceof Buffer
-      ? input
-      : Buffer.from(await input.arrayBuffer());
+  let buffer: Buffer;
+  if (input instanceof Buffer) {
+    buffer = input;
+  } else {
+    // input is File
+    buffer = Buffer.from(await (input as File).arrayBuffer());
+  }
 
   const response = await fetch(`${NAVER_STT_ENDPOINT}?lang=${lang}`, {
     method: 'POST',
@@ -77,7 +94,7 @@ export async function transcribeSpeechWithClova(
       'X-NCP-APIGW-API-KEY-ID': clientId,
       'X-NCP-APIGW-API-KEY': clientSecret,
     },
-    body: buffer,
+    body: new Uint8Array(buffer),
   });
 
   if (!response.ok) {
@@ -349,6 +366,178 @@ Hãy viết một đoạn dẫn nhập thật cảm xúc.`,
   };
 }
 
+type RecipeIngredient = {
+  name: string;
+  quantity: string;
+  unit: string;
+};
+
+type DishWithIngredients = {
+  dishName: string;
+  ingredients: RecipeIngredient[];
+  isFromSavedRecipe: boolean;
+};
+
+type ShoppingRequest = {
+  dishes: DishWithIngredients[];
+  otherDishes: string[]; // Món không có trong công thức
+  people: number;
+  meals: number;
+};
+
+type SmartShoppingResultV2 = {
+  fromRecipes: {
+    category: string;
+    items: { name: string; quantity: string; forDishes: string[] }[];
+  }[];
+  aiSuggestions: {
+    category: string;
+    items: { name: string; quantity: string; reasoning: string }[];
+  }[];
+  advice: string;
+};
+
+export async function generateSmartShoppingList({
+  dishes,
+  otherDishes,
+  people,
+  meals,
+}: ShoppingRequest): Promise<SmartShoppingResultV2> {
+  if ((!dishes || dishes.length === 0) && (!otherDishes || otherDishes.length === 0)) {
+    throw new Error('Danh sách món ăn trống');
+  }
+
+  // Tổng hợp nguyên liệu từ công thức đã lưu
+  const ingredientMap = new Map<string, { quantity: string; unit: string; forDishes: string[] }>();
+
+  for (const dish of dishes) {
+    if (dish.isFromSavedRecipe && dish.ingredients) {
+      for (const ing of dish.ingredients) {
+        const key = ing.name.toLowerCase();
+        if (ingredientMap.has(key)) {
+          const existing = ingredientMap.get(key)!;
+          existing.forDishes.push(dish.dishName);
+        } else {
+          ingredientMap.set(key, {
+            quantity: ing.quantity,
+            unit: ing.unit,
+            forDishes: [dish.dishName],
+          });
+        }
+      }
+    }
+  }
+
+  // Nhóm nguyên liệu theo category
+  const categorizeIngredient = (name: string): string => {
+    const lowerName = name.toLowerCase();
+    if (/thịt|gà|heo|bò|cá|tôm|mực|cua|sườn|ba chỉ/.test(lowerName)) return 'Thịt/Cá/Hải sản';
+    if (/rau|cải|hành|tỏi|ớt|gừng|sả|cà|đậu|giá|nấm|khoai/.test(lowerName)) return 'Rau củ';
+    if (/trứng/.test(lowerName)) return 'Trứng/Sữa';
+    if (/nước mắm|muối|đường|tiêu|dầu|bột|gia vị|hạt nêm|xì dầu/.test(lowerName)) return 'Gia vị';
+    return 'Khác';
+  };
+
+  const fromRecipesMap = new Map<string, { name: string; quantity: string; forDishes: string[] }[]>();
+
+  for (const [name, data] of ingredientMap) {
+    const category = categorizeIngredient(name);
+    if (!fromRecipesMap.has(category)) {
+      fromRecipesMap.set(category, []);
+    }
+    fromRecipesMap.get(category)!.push({
+      name: name.charAt(0).toUpperCase() + name.slice(1),
+      quantity: `${data.quantity} ${data.unit}`.trim(),
+      forDishes: data.forDishes,
+    });
+  }
+
+  const fromRecipes = Array.from(fromRecipesMap.entries()).map(([category, items]) => ({
+    category,
+    items,
+  }));
+
+  // Tạo prompt cho AI gợi ý bổ sung
+  const savedDishNames = dishes.filter(d => d.isFromSavedRecipe).map(d => d.dishName);
+  const allDishNames = [...savedDishNames, ...otherDishes];
+  const existingIngredients = Array.from(ingredientMap.keys()).join(', ');
+
+  const data = await callClovaStudio(CLOVA_STUDIO_LONG_MODEL, {
+    messages: [
+      {
+        role: 'system',
+        content: `Bạn là chuyên gia dinh dưỡng và nấu ăn Việt Nam.
+
+NHIỆM VỤ: Gợi ý nguyên liệu BỔ SUNG để bữa ăn trọn vẹn hơn.
+
+Người dùng đã có sẵn nguyên liệu từ công thức: ${existingIngredients || 'Chưa có'}
+
+Hãy gợi ý THÊM những thứ còn thiếu hoặc giúp bữa ăn ngon hơn:
+- Rau ăn kèm (xà lách, rau thơm, dưa leo...)
+- Nước chấm phù hợp
+- Món canh/món phụ nếu thiếu
+- Đồ uống, tráng miệng đơn giản
+
+KHÔNG gợi ý những thứ đã có trong danh sách nguyên liệu.
+
+QUY TẮC SỐ LƯỢNG:
+- Tính cho ${people} người, ${meals} bữa
+- Dùng đơn vị chợ Việt Nam (bó, củ, gói, chai)
+- Làm tròn hợp lý
+
+OUTPUT JSON:
+{
+  "aiSuggestions": [
+    {
+      "category": "Rau ăn kèm/Nước chấm/Khác",
+      "items": [
+        { "name": "Tên", "quantity": "Số lượng", "reasoning": "Lý do gợi ý" }
+      ]
+    }
+  ],
+  "advice": "Mẹo đi chợ ngắn gọn"
+}`,
+      },
+      {
+        role: 'user',
+        content: `Thực đơn: ${allDishNames.join(', ')}
+${otherDishes.length > 0 ? `Món chưa có công thức (cần AI ước lượng): ${otherDishes.join(', ')}` : ''}
+
+Gợi ý nguyên liệu bổ sung cho bữa ăn trọn vẹn.`,
+      },
+    ],
+    maxTokens: 1200,
+    temperature: 0.4,
+  });
+
+  const output =
+    data?.result?.outputText ||
+    data?.result?.message?.content ||
+    data?.text ||
+    '';
+
+  const cleanJson = output
+    .replace(/```json/gi, '')
+    .replace(/```/g, '')
+    .trim();
+
+  try {
+    const parsed = JSON.parse(cleanJson);
+    return {
+      fromRecipes,
+      aiSuggestions: Array.isArray(parsed.aiSuggestions) ? parsed.aiSuggestions : [],
+      advice: parsed.advice || '',
+    };
+  } catch (error) {
+    console.warn('Failed to parse smart shopping JSON:', error, cleanJson);
+    return {
+      fromRecipes,
+      aiSuggestions: [],
+      advice: 'Không thể lấy gợi ý AI lúc này.',
+    };
+  }
+}
+
 export async function extractTextFromImageWithNaver(
   file: File,
   options: OcrOptions = {}
@@ -404,4 +593,121 @@ export async function transcribeLongSpeechFromUrl(
   const arrayBuffer = await fileResponse.arrayBuffer();
   const buffer = Buffer.from(arrayBuffer);
   return transcribeSpeechWithClova(buffer, options);
+}
+
+type RecipeInfo = {
+  id: string;
+  dishName: string;
+  ingredients: string[];
+};
+
+type SuggestedDish = {
+  dishName: string;
+  usedIngredients: string[];
+  missingIngredients: string[];
+  isFromSavedRecipes: boolean;
+  recipeId?: string;
+  matchScore: number;
+};
+
+type IngredientSuggestionResult = {
+  fromSavedRecipes: SuggestedDish[];
+  aiSuggestions: SuggestedDish[];
+  advice?: string;
+};
+
+export async function analyzeIngredientsForRecipes(
+  availableIngredients: string[],
+  savedRecipes: RecipeInfo[]
+): Promise<IngredientSuggestionResult> {
+  const ingredientsList = availableIngredients.join(', ');
+  const savedRecipesInfo = savedRecipes && savedRecipes.length > 0
+    ? savedRecipes.map(r => `- ${r.dishName} (id: ${r.id}): ${r.ingredients.join(', ')}`).join('\n')
+    : 'Không có công thức nào được lưu.';
+
+  const prompt = `Người dùng CÓ SẴN các nguyên liệu này: [${ingredientsList}]
+
+Danh sách công thức đã lưu:
+${savedRecipesInfo}
+
+NHIỆM VỤ: Gợi ý món ăn DỰA TRÊN nguyên liệu người dùng CÓ SẴN.
+
+Trả về JSON:
+{
+  "fromSavedRecipes": [
+    {
+      "dishName": "Tên món",
+      "recipeId": "ID",
+      "usedIngredients": ["CHỈ nguyên liệu từ danh sách CÓ SẴN của người dùng"],
+      "missingIngredients": ["nguyên liệu cần mua thêm"],
+      "matchScore": 70
+    }
+  ],
+  "aiSuggestions": [
+    {
+      "dishName": "Tên món mới",
+      "usedIngredients": ["CHỈ nguyên liệu từ danh sách CÓ SẴN của người dùng"],
+      "missingIngredients": ["nguyên liệu cần mua thêm"],
+      "matchScore": 60
+    }
+  ],
+  "advice": "Mẹo nấu ăn ngắn"
+}
+
+QUY TẮC QUAN TRỌNG:
+1. usedIngredients CHỈ ĐƯỢC chứa nguyên liệu từ danh sách [${ingredientsList}] - KHÔNG ĐƯỢC bịa ra!
+2. Nếu công thức đã lưu KHÔNG DÙNG nguyên liệu nào từ [${ingredientsList}] thì KHÔNG đưa vào fromSavedRecipes
+3. aiSuggestions: Gợi ý 3-5 món THỰC SỰ dùng được [${ingredientsList}], ví dụ: trứng cút + thịt heo = thịt kho trứng cút
+4. matchScore = (số nguyên liệu có sẵn dùng được / tổng nguyên liệu món) * 100
+5. Không liệt kê gia vị cơ bản (muối, tiêu, nước mắm, dầu ăn) vào missingIngredients
+6. JSON thuần, không markdown`;
+
+  const data = await callClovaStudio(CLOVA_STUDIO_LONG_MODEL, {
+    messages: [
+      {
+        role: 'system',
+        content: 'Bạn là trợ lý nấu ăn chuyên nghiệp. Luôn trả về JSON hợp lệ, không có markdown.',
+      },
+      {
+        role: 'user',
+        content: prompt,
+      },
+    ],
+    temperature: 0.3,
+    maxTokens: 2000,
+  });
+
+  const output =
+    data?.result?.outputText ||
+    data?.result?.message?.content ||
+    data?.text ||
+    '';
+
+  try {
+    const cleanJson = output.replace(/```json/gi, '').replace(/```/g, '').trim();
+    const parsed = JSON.parse(cleanJson) as IngredientSuggestionResult;
+
+    const fromSavedRecipes = (parsed.fromSavedRecipes || []).map(dish => ({
+      ...dish,
+      isFromSavedRecipes: true,
+    }));
+
+    const aiSuggestions = (parsed.aiSuggestions || []).map(dish => ({
+      ...dish,
+      isFromSavedRecipes: false,
+    }));
+
+    return {
+      fromSavedRecipes,
+      aiSuggestions,
+      advice: parsed.advice || '',
+    };
+  } catch (error) {
+    console.warn('Failed to parse Clova Studio JSON (Ingredients):', error, output);
+    return {
+      fromSavedRecipes: [],
+      aiSuggestions: [],
+      advice: '',
+    };
+  }
 }
